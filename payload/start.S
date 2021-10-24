@@ -1,0 +1,2 @@
+_start:
+  jmp payload

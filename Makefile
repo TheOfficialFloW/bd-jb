@@ -19,7 +19,7 @@ SRC = \
 
 all:
 	javac com/bdjb/PayloadClassLoaderSerializer.java && java com/bdjb/PayloadClassLoaderSerializer
-	javac -source 1.4 -target 1.4 -bootclasspath "lib/rt.jar:lib/bdjstack.jar:lib/fakejdk.jar" $(SRC)
+	javac -source 1.4 -target 1.4 -bootclasspath "lib/rt.jar:lib/bdjstack.jar" $(SRC)
 	jar cf disc/BDMV/JAR/00000.jar com/bdjb/*.class com/bdjb/*.ser com/bdjb/bluray.ExploitXlet.perm
 	java -cp "tools/security.jar:tools/bcprov-jdk15-137.jar:tools/tools.jar" net.java.bd.tools.security.BDSigner disc/BDMV/JAR/00000.jar
 	java -jar tools/bdjo.jar bdmv/bdjo.xml disc/BDMV/BDJO/00000.bdjo
@@ -28,7 +28,7 @@ all:
 	java -jar tools/id.jar bdmv/id.xml disc/CERTIFICATE/id.bdmv
 
 clean:
-	rm -rf *.class
+	rm -rf jdk/internal/misc/*.class
 	rm -rf com/bdjb/*.class
 	rm -rf com/bdjb/*.ser
 	rm -rf META-INF

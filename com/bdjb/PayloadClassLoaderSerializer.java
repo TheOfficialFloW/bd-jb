@@ -7,9 +7,7 @@
 
 package com.bdjb;
 
-import java.io.FileInputStream;
 import java.io.FileOutputStream;
-import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 
 /** Simple util to create a serialized object of the PayloadClassLoader class. */

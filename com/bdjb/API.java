@@ -28,18 +28,18 @@ final class API {
   private static final String UNSUPPORTED_DLOPEN_OPERATION_STRING =
       "Unsupported dlopen() operation";
 
+  private static final String JAVA_JAVA_LANG_REFLECT_ARRAY_MULTI_NEW_ARRAY_SYMBOL =
+          "Java_java_lang_reflect_Array_multiNewArray";
+  private static final String JVM_NATIVE_PATH_SYMBOL = "JVM_NativePath";
   private static final String SETJMP_SYMBOL = "setjmp";
   private static final String UX86_64_SETCONTEXT_SYMBOL = "__Ux86_64_setcontext";
-  private static final String JVM_NATIVE_PATH_SYMBOL = "JVM_NativePath";
-  private static final String JAVA_JAVA_LANG_REFLECT_ARRAY_MULTI_NEW_ARRAY_SYMBOL =
-      "Java_java_lang_reflect_Array_multiNewArray";
 
   private static final String MULTI_NEW_ARRAY_METHOD_NAME = "multiNewArray";
   private static final String MULTI_NEW_ARRAY_METHOD_SIGNATURE = "(Ljava/lang/Class;[I)J";
 
   private static final String NATIVE_LIBRARY_CLASS_NAME = "java.lang.ClassLoader$NativeLibrary";
-  private static final String FIND_ENTRY_METHOD_NAME = "findEntry";
   private static final String FIND_METHOD_NAME = "find";
+  private static final String FIND_ENTRY_METHOD_NAME = "findEntry";
   private static final String HANDLE_FIELD_NAME = "handle";
 
   private static final int[] MULTI_NEW_ARRAY_DIMENSIONS = new int[] {1};
@@ -62,8 +62,8 @@ final class API {
 
   private long Java_java_lang_reflect_Array_multiNewArray;
   private long JVM_NativePath;
-  private long __Ux86_64_setcontext;
   private long setjmp;
+  private long __Ux86_64_setcontext;
 
   private boolean jdk11;
 
@@ -126,7 +126,7 @@ final class API {
   private void initSymbols() {
     JVM_NativePath = dlsym(RTLD_DEFAULT, JVM_NATIVE_PATH_SYMBOL);
     if (JVM_NativePath == 0) {
-      throw new IllegalArgumentException("JVM_NativePath symbol could not be found.");
+      throw new IllegalStateException("JVM_NativePath symbol could not be found.");
     }
 
     __Ux86_64_setcontext = dlsym(LIBKERNEL_MODULE_HANDLE, UX86_64_SETCONTEXT_SYMBOL);
@@ -144,7 +144,7 @@ final class API {
     }
 
     if (__Ux86_64_setcontext == 0) {
-      throw new IllegalArgumentException("__Ux86_64_setcontext symbol could not be found.");
+      throw new IllegalStateException("__Ux86_64_setcontext symbol could not be found.");
     }
 
     if (jdk11) {
@@ -155,13 +155,13 @@ final class API {
           dlsym(RTLD_DEFAULT, JAVA_JAVA_LANG_REFLECT_ARRAY_MULTI_NEW_ARRAY_SYMBOL);
     }
     if (Java_java_lang_reflect_Array_multiNewArray == 0) {
-      throw new IllegalArgumentException(
+      throw new IllegalStateException(
           "Java_java_lang_reflect_Array_multiNewArray symbol could not be found.");
     }
 
     setjmp = dlsym(LIBC_MODULE_HANDLE, SETJMP_SYMBOL);
     if (setjmp == 0) {
-      throw new IllegalArgumentException("setjmp symbol could not be found.");
+      throw new IllegalStateException("setjmp symbol could not be found.");
     }
   }
 
@@ -217,7 +217,7 @@ final class API {
       }
     }
 
-    throw new IllegalArgumentException("Native method could not be installed.");
+    throw new IllegalStateException("Native method could not be installed.");
   }
 
   private void buildContext(

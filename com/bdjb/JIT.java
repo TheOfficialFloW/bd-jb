@@ -13,7 +13,7 @@ import java.io.RandomAccessFile;
  * JIT class that exploits a vulnerability in the runtime-compiler protocol to map payloads to
  * executable memory.
  */
-final class JIT {
+public final class JIT {
   static final int BDJ_MODULE_HANDLE = 0;
 
   static final int MAX_JIT_SIZE = 24 * 1024 * 1024; // Actually max is 30MB, but let's be safe.
@@ -56,7 +56,7 @@ final class JIT {
     this.init();
   }
 
-  static synchronized JIT getInstance() throws Exception {
+  public static synchronized JIT getInstance() throws Exception {
     if (instance == null) {
       instance = new JIT();
     }
@@ -112,7 +112,7 @@ final class JIT {
         api.read32(compilerAgentSocketOpcode + api.read32(compilerAgentSocketOpcode + 0x3) + 0x7);
   }
 
-  long mapPayload(String path) throws Exception {
+  public long mapPayload(String path) throws Exception {
     RandomAccessFile file = new RandomAccessFile(path, "r");
 
     // TODO: Currently we just use maximum size so that the address is predictable.

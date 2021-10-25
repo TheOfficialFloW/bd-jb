@@ -13,7 +13,7 @@ import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 
 /** API class to access native data and execute native code. */
-final class API {
+public final class API {
   static final int INT8_SIZE = 1;
   static final int INT16_SIZE = 2;
   static final int INT32_SIZE = 4;
@@ -71,7 +71,7 @@ final class API {
     this.init();
   }
 
-  static synchronized API getInstance() throws Exception {
+  public static synchronized API getInstance() throws Exception {
     if (instance == null) {
       instance = new API();
     }
@@ -257,7 +257,7 @@ final class API {
     write64(contextData + 0x118, 0x41414141);
   }
 
-  long call(long func, long arg0, long arg1, long arg2, long arg3, long arg4, long arg5) {
+  public long call(long func, long arg0, long arg1, long arg2, long arg3, long arg4, long arg5) {
     long fakeCallKlass = malloc(0x400);
     memset(fakeCallKlass, 0, 0x400);
 
@@ -320,31 +320,31 @@ final class API {
     return read64(ret);
   }
 
-  long call(long func, long arg0, long arg1, long arg2, long arg3, long arg4) {
+  public long call(long func, long arg0, long arg1, long arg2, long arg3, long arg4) {
     return call(func, arg0, arg1, arg2, arg3, arg4, (long) 0);
   }
 
-  long call(long func, long arg0, long arg1, long arg2, long arg3) {
+  public long call(long func, long arg0, long arg1, long arg2, long arg3) {
     return call(func, arg0, arg1, arg2, arg3, (long) 0);
   }
 
-  long call(long func, long arg0, long arg1, long arg2) {
+  public long call(long func, long arg0, long arg1, long arg2) {
     return call(func, arg0, arg1, arg2, (long) 0);
   }
 
-  long call(long func, long arg0, long arg1) {
+  public long call(long func, long arg0, long arg1) {
     return call(func, arg0, arg1, (long) 0);
   }
 
-  long call(long func, long arg0) {
+  public long call(long func, long arg0) {
     return call(func, arg0, (long) 0);
   }
 
-  long call(long func) {
+  public long call(long func) {
     return call(func, (long) 0);
   }
 
-  long dlsym(long handle, String symbol) {
+  public long dlsym(long handle, String symbol) {
     int oldHandle = (int) RTLD_DEFAULT;
     try {
       if (executableHandle != 0) {
@@ -365,7 +365,7 @@ final class API {
     }
   }
 
-  long addrof(Object obj) {
+  public long addrof(Object obj) {
     try {
       unsafe.putObject(LONG_VALUE, longValueOffset, obj);
       return unsafe.getLong(LONG_VALUE, longValueOffset);
@@ -374,86 +374,86 @@ final class API {
     }
   }
 
-  byte read8(long addr) {
+  public byte read8(long addr) {
     return unsafe.getByte(addr);
   }
 
-  short read16(long addr) {
+  public short read16(long addr) {
     return unsafe.getShort(addr);
   }
 
-  int read32(long addr) {
+  public int read32(long addr) {
     return unsafe.getInt(addr);
   }
 
-  long read64(long addr) {
+  public long read64(long addr) {
     return unsafe.getLong(addr);
   }
 
-  void write8(long addr, byte val) {
+  public void write8(long addr, byte val) {
     unsafe.putByte(addr, val);
   }
 
-  void write16(long addr, short val) {
+  public void write16(long addr, short val) {
     unsafe.putShort(addr, val);
   }
 
-  void write32(long addr, int val) {
+  public void write32(long addr, int val) {
     unsafe.putInt(addr, val);
   }
 
-  void write64(long addr, long val) {
+  public void write64(long addr, long val) {
     unsafe.putLong(addr, val);
   }
 
-  long malloc(long size) {
+  public long malloc(long size) {
     return unsafe.allocateMemory(size);
   }
 
-  long realloc(long ptr, long size) {
+  public long realloc(long ptr, long size) {
     return unsafe.reallocateMemory(ptr, size);
   }
 
-  void free(long ptr) {
+  public void free(long ptr) {
     unsafe.freeMemory(ptr);
   }
 
-  long memcpy(long dest, long src, long n) {
+  public long memcpy(long dest, long src, long n) {
     for (int i = 0; i < n; i++) {
       write8(dest + i, read8(src + i));
     }
     return dest;
   }
 
-  long memcpy(long dest, byte[] src, long n) {
+  public long memcpy(long dest, byte[] src, long n) {
     for (int i = 0; i < n; i++) {
       write8(dest + i, src[i]);
     }
     return dest;
   }
 
-  byte[] memcpy(byte[] dest, long src, long n) {
+  public byte[] memcpy(byte[] dest, long src, long n) {
     for (int i = 0; i < n; i++) {
       dest[i] = read8(src + i);
     }
     return dest;
   }
 
-  long memset(long s, int c, long n) {
+  public long memset(long s, int c, long n) {
     for (int i = 0; i < n; i++) {
       write8(s + i, (byte) c);
     }
     return s;
   }
 
-  byte[] memset(byte[] s, int c, long n) {
+  public byte[] memset(byte[] s, int c, long n) {
     for (int i = 0; i < n; i++) {
       s[i] = (byte) c;
     }
     return s;
   }
 
-  int memcmp(long s1, long s2, long n) {
+  public int memcmp(long s1, long s2, long n) {
     for (int i = 0; i < n; i++) {
       byte b1 = read8(s1 + i);
       byte b2 = read8(s2 + i);
@@ -464,7 +464,7 @@ final class API {
     return 0;
   }
 
-  int memcmp(long s1, byte[] s2, long n) {
+  public int memcmp(long s1, byte[] s2, long n) {
     for (int i = 0; i < n; i++) {
       byte b1 = read8(s1 + i);
       byte b2 = s2[i];
@@ -475,11 +475,11 @@ final class API {
     return 0;
   }
 
-  int memcmp(byte[] s1, long s2, long n) {
+  public int memcmp(byte[] s1, long s2, long n) {
     return memcmp(s2, s1, n);
   }
 
-  int strcmp(long s1, long s2) {
+  public int strcmp(long s1, long s2) {
     int i = 0;
     while (true) {
       byte b1 = read8(s1 + i);
@@ -494,7 +494,7 @@ final class API {
     }
   }
 
-  int strcmp(long s1, String s2) {
+  public int strcmp(long s1, String s2) {
     byte[] bytes = toCBytes(s2);
     int i = 0;
     while (true) {
@@ -510,11 +510,11 @@ final class API {
     }
   }
 
-  int strcmp(String s1, long s2) {
+  public int strcmp(String s1, long s2) {
     return strcmp(s2, s1);
   }
 
-  long strcpy(long dest, long src) {
+  public long strcpy(long dest, long src) {
     int i = 0;
     while (true) {
       byte ch = read8(src + i);
@@ -527,7 +527,7 @@ final class API {
     return dest;
   }
 
-  long strcpy(long dest, String src) {
+  public long strcpy(long dest, String src) {
     byte[] bytes = toCBytes(src);
     int i = 0;
     while (true) {
@@ -541,7 +541,7 @@ final class API {
     return dest;
   }
 
-  String readString(long src, int n) {
+  public String readString(long src, int n) {
     ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
     int i = 0;
     while (true) {
@@ -555,11 +555,11 @@ final class API {
     return outputStream.toString();
   }
 
-  String readString(long src) {
+  public String readString(long src) {
     return readString(src, -1);
   }
 
-  byte[] toCBytes(String str) {
+  public byte[] toCBytes(String str) {
     byte[] bytes = new byte[str.length() + 1];
     System.arraycopy(str.getBytes(), 0, bytes, 0, str.length());
     return bytes;

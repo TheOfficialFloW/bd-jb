@@ -14,16 +14,16 @@ import java.lang.reflect.Method;
 
 /** API class to access native data and execute native code. */
 public final class API {
-  static final int INT8_SIZE = 1;
-  static final int INT16_SIZE = 2;
-  static final int INT32_SIZE = 4;
-  static final int INT64_SIZE = 8;
+  public static final int INT8_SIZE = 1;
+  public static final int INT16_SIZE = 2;
+  public static final int INT32_SIZE = 4;
+  public static final int INT64_SIZE = 8;
 
-  static final long RTLD_DEFAULT = -2;
+  public static final long RTLD_DEFAULT = -2;
 
-  static final long LIBC_MODULE_HANDLE = 0x2;
-  static final long LIBKERNEL_MODULE_HANDLE = 0x2001;
-  static final long LIBJAVA_MODULE_HANDLE = 0x4A;
+  public static final long LIBC_MODULE_HANDLE = 0x2;
+  public static final long LIBKERNEL_MODULE_HANDLE = 0x2001;
+  public static final long LIBJAVA_MODULE_HANDLE = 0x4A;
 
   private static final String UNSUPPORTED_DLOPEN_OPERATION_STRING =
       "Unsupported dlopen() operation";

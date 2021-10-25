@@ -14,11 +14,10 @@ import java.io.RandomAccessFile;
  * executable memory.
  */
 public final class JIT {
-  static final int BDJ_MODULE_HANDLE = 0;
-
-  static final int MAX_JIT_SIZE = 24 * 1024 * 1024; // Actually max is 30MB, but let's be safe.
-  static final int PAGE_SIZE = 0x4000;
-  static final int ALIGNMENT = 0x100000;
+  // We actually have 32MB of code memory, but reserve 8MB for Java JIT.
+  public static final int MAX_CODE_SIZE = 24 * 1024 * 1024;
+  public static final int PAGE_SIZE = 0x4000;
+  public static final int ALIGNMENT = 0x100000;
 
   private static final int CHUNK_SIZE = 0x30;
 
@@ -39,6 +38,8 @@ public final class JIT {
   private static final String SCE_KERNEL_GET_MODULE_INFO_SYMBOL = "sceKernelGetModuleInfo";
   private static final String WRITE_SYMBOL = "write";
   private static final String READ_SYMBOL = "read";
+
+  private static final int BDJ_MODULE_HANDLE = 0;
 
   private static JIT instance;
 
@@ -116,9 +117,9 @@ public final class JIT {
     RandomAccessFile file = new RandomAccessFile(path, "r");
 
     // TODO: Currently we just use maximum size so that the address is predictable.
-    long size = MAX_JIT_SIZE;
+    long size = MAX_CODE_SIZE;
     //    long size = file.length() + 0x88 + ALIGNMENT - 1;
-    //    if (size >= MAX_JIT_SIZE) {
+    //    if (size >= MAX_CODE_SIZE) {
     //      throw new IllegalArgumentException("Payload is too big.");
     //    }
 

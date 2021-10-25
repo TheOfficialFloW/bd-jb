@@ -29,7 +29,7 @@ final class API {
       "Unsupported dlopen() operation";
 
   private static final String JAVA_JAVA_LANG_REFLECT_ARRAY_MULTI_NEW_ARRAY_SYMBOL =
-          "Java_java_lang_reflect_Array_multiNewArray";
+      "Java_java_lang_reflect_Array_multiNewArray";
   private static final String JVM_NATIVE_PATH_SYMBOL = "JVM_NativePath";
   private static final String SETJMP_SYMBOL = "setjmp";
   private static final String UX86_64_SETCONTEXT_SYMBOL = "__Ux86_64_setcontext";

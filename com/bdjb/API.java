@@ -10,6 +10,7 @@ package com.bdjb;
 import java.io.ByteArrayOutputStream;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Field;
+import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 
 /** API class to access native data and execute native code. */
@@ -356,7 +357,9 @@ public final class API {
         handleField.setLong(nativeLibrary, handle);
       }
       return ((Long) findMethod.invoke(nativeLibrary, new Object[] {symbol})).longValue();
-    } catch (Exception e) {
+    } catch (IllegalAccessException e) {
+      return 0;
+    } catch (InvocationTargetException e) {
       return 0;
     } finally {
       if (executableHandle != 0) {
@@ -366,12 +369,8 @@ public final class API {
   }
 
   public long addrof(Object obj) {
-    try {
-      unsafe.putObject(LONG_VALUE, longValueOffset, obj);
-      return unsafe.getLong(LONG_VALUE, longValueOffset);
-    } catch (Exception e) {
-      return 0;
-    }
+    unsafe.putObject(LONG_VALUE, longValueOffset, obj);
+    return unsafe.getLong(LONG_VALUE, longValueOffset);
   }
 
   public byte read8(long addr) {
@@ -480,8 +479,7 @@ public final class API {
   }
 
   public int strcmp(long s1, long s2) {
-    int i = 0;
-    while (true) {
+    for (int i = 0; ; i++) {
       byte b1 = read8(s1 + i);
       byte b2 = read8(s2 + i);
       if (b1 != b2) {
@@ -490,14 +488,12 @@ public final class API {
       if (b1 == (byte) 0 && b2 == (byte) 0) {
         return 0;
       }
-      i++;
     }
   }
 
   public int strcmp(long s1, String s2) {
     byte[] bytes = toCBytes(s2);
-    int i = 0;
-    while (true) {
+    for (int i = 0; ; i++) {
       byte b1 = read8(s1 + i);
       byte b2 = bytes[i];
       if (b1 != b2) {
@@ -506,7 +502,6 @@ public final class API {
       if (b1 == (byte) 0 && b2 == (byte) 0) {
         return 0;
       }
-      i++;
     }
   }
 
@@ -515,42 +510,36 @@ public final class API {
   }
 
   public long strcpy(long dest, long src) {
-    int i = 0;
-    while (true) {
+    for (int i = 0; ; i++) {
       byte ch = read8(src + i);
       write8(dest + i, ch);
       if (ch == (byte) 0) {
         break;
       }
-      i++;
     }
     return dest;
   }
 
   public long strcpy(long dest, String src) {
     byte[] bytes = toCBytes(src);
-    int i = 0;
-    while (true) {
+    for (int i = 0; ; i++) {
       byte ch = bytes[i];
       write8(dest + i, ch);
       if (ch == (byte) 0) {
         break;
       }
-      i++;
     }
     return dest;
   }
 
-  public String readString(long src, int n) {
+  public String readString(long src, long n) {
     ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
-    int i = 0;
-    while (true) {
+    for (int i = 0; i < n; i++) {
       byte ch = read8(src + i);
-      if (ch == (byte) 0 || i == n) {
+      if (ch == (byte) 0) {
         break;
       }
       outputStream.write(new byte[] {ch}, 0, 1);
-      i++;
     }
     return outputStream.toString();
   }

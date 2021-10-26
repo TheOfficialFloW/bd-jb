@@ -534,9 +534,9 @@ public final class API {
 
   public String readString(long src, long n) {
     ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
-    for (int i = 0; i < n; i++) {
+    for (int i = 0; ; i++) {
       byte ch = read8(src + i);
-      if (ch == (byte) 0) {
+      if (ch == (byte) 0 || i == n) {
         break;
       }
       outputStream.write(new byte[] {ch}, 0, 1);

@@ -149,9 +149,7 @@ public final class JIT {
       throw new IllegalArgumentException("Invalid data section offset.");
     }
 
-    // TODO: Currently we hardcode the size so that the address is predictable.
-    long size = 1 * 1024 * 1024;
-    //    long size = file.length() + 0x88 + ALIGNMENT - 1;
+    long size = file.length() + 0x88 + ALIGNMENT - 1;
     if (size >= MAX_CODE_SIZE) {
       throw new IllegalArgumentException("Payload is too big.");
     }

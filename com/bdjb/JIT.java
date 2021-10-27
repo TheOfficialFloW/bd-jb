@@ -142,11 +142,11 @@ public final class JIT {
     RandomAccessFile file = new RandomAccessFile(path, "r");
 
     if ((dataSectionOffset & (PAGE_SIZE - 1)) != 0) {
-      throw new IllegalArgumentException("Ddata section offset is not page aligned.");
+      throw new IllegalArgumentException("Unaligned data section offset.");
     }
 
-    if (dataSectionOffset > file.length()) {
-      throw new IllegalArgumentException("Data section offset is too big.");
+    if (dataSectionOffset < 0 || dataSectionOffset > file.length()) {
+      throw new IllegalArgumentException("Invalid data section offset.");
     }
 
     // TODO: Currently we just use maximum size so that the address is predictable.

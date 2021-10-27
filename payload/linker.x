@@ -6,4 +6,7 @@ ENTRY(_start)
 SECTIONS
 {
   . = 0x916300000;
+  .text : { *(.text) }
+  . = 0x916304000;
+  .data : { *(.data) }
 }

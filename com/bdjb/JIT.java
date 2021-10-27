@@ -19,6 +19,18 @@ public final class JIT {
   public static final int PAGE_SIZE = 0x4000;
   public static final int ALIGNMENT = 0x100000;
 
+  public static final int PROT_NONE = 0x0;
+  public static final int PROT_READ = 0x1;
+  public static final int PROT_WRITE = 0x2;
+  public static final int PROT_EXEC = 0x4;
+
+  public static final int MAP_SHARED = 0x1;
+  public static final int MAP_PRIVATE = 0x2;
+  public static final int MAP_FIXED = 0x10;
+  public static final int MAP_ANONYMOUS = 0x1000;
+
+  public static final long MAP_FAILED = -1;
+
   private static final int CHUNK_SIZE = 0x30;
 
   private static final int SCE_KERNEL_MODULE_INFO_SIZE = 0x160;
@@ -46,6 +58,7 @@ public final class JIT {
   private final API api;
 
   private long sceKernelGetModuleInfo;
+  private long mmap;
   private long read;
   private long write;
   private long BufferBlob__create;
@@ -65,15 +78,23 @@ public final class JIT {
   }
 
   private void init() {
+    initSymbols();
+    initJitHelpers();
+  }
+
+  private void initSymbols() {
     sceKernelGetModuleInfo =
         api.dlsym(API.LIBKERNEL_MODULE_HANDLE, SCE_KERNEL_GET_MODULE_INFO_SYMBOL);
+    mmap = api.dlsym(API.LIBKERNEL_MODULE_HANDLE, "mmap");
     read = api.dlsym(API.LIBKERNEL_MODULE_HANDLE, READ_SYMBOL);
     write = api.dlsym(API.LIBKERNEL_MODULE_HANDLE, WRITE_SYMBOL);
 
     if (sceKernelGetModuleInfo == 0 || read == 0 || write == 0) {
-      throw new IllegalStateException("Symbols could not be found.");
+      throw new IllegalStateException("Could not find symbols.");
     }
+  }
 
+  private void initJitHelpers() {
     long modinfo = api.malloc(SCE_KERNEL_MODULE_INFO_SIZE);
     api.memset(modinfo, 0, SCE_KERNEL_MODULE_INFO_SIZE);
     api.write64(modinfo + 0x00, SCE_KERNEL_MODULE_INFO_SIZE);
@@ -92,7 +113,7 @@ public final class JIT {
       i++;
     }
     if (i == bdjSize) {
-      throw new IllegalStateException("BufferBlob::create function could not be found.");
+      throw new IllegalStateException("Could not find BufferBlob::create.");
     }
     BufferBlob__create = bdjBase + i - 0x21;
 
@@ -106,15 +127,27 @@ public final class JIT {
       i++;
     }
     if (i == bdjSize) {
-      throw new IllegalStateException("Compiler agent socket could not be found.");
+      throw new IllegalStateException("Could not find compiler agent socket.");
     }
     long compilerAgentSocketOpcode = bdjBase + i - 0x10;
     compilerAgentSocket =
         api.read32(compilerAgentSocketOpcode + api.read32(compilerAgentSocketOpcode + 0x3) + 0x7);
   }
 
-  public long mapPayload(String path) throws Exception {
+  private long align(long x, long align) {
+    return (x + align - 1) & ~(align - 1);
+  }
+
+  public long mapPayload(String path, long dataSectionOffset) throws Exception {
     RandomAccessFile file = new RandomAccessFile(path, "r");
+
+    if ((dataSectionOffset & (PAGE_SIZE - 1)) != 0) {
+      throw new IllegalArgumentException("Ddata section offset is not page aligned.");
+    }
+
+    if (dataSectionOffset > file.length()) {
+      throw new IllegalArgumentException("Data section offset is too big.");
+    }
 
     // TODO: Currently we just use maximum size so that the address is predictable.
     long size = MAX_CODE_SIZE;
@@ -123,22 +156,27 @@ public final class JIT {
     //      throw new IllegalArgumentException("Payload is too big.");
     //    }
 
+    // Allocate JIT memory.
     long name = api.malloc(4);
     api.strcpy(name, "jit");
     long blob = api.call(BufferBlob__create, name, size);
-    long code = blob + api.read32(blob + 0x20);
     api.free(name);
+    if (blob == 0) {
+      throw new IllegalStateException("Could not allocate JIT memory.");
+    }
+    long code = blob + api.read32(blob + 0x20);
 
-    long address = (code + ALIGNMENT - 1) & ~(ALIGNMENT - 1);
+    long address = align(code, ALIGNMENT);
 
     long request = api.malloc(COMPILER_AGENT_REQUEST_SIZE);
     long response = api.malloc(API.INT8_SIZE);
 
-    for (long i = 0; i < file.length(); i += CHUNK_SIZE) {
+    // Copy .text section.
+    for (long i = 0; i < dataSectionOffset; i += CHUNK_SIZE) {
       byte[] chunk = new byte[CHUNK_SIZE];
 
       file.seek(i);
-      file.read(chunk, 0, (int) Math.min(file.length() - i, CHUNK_SIZE));
+      file.read(chunk, 0, (int) Math.min(dataSectionOffset - i, CHUNK_SIZE));
 
       api.memset(request, 0, COMPILER_AGENT_REQUEST_SIZE);
       api.memcpy(request + 0x00, chunk, CHUNK_SIZE);
@@ -155,6 +193,29 @@ public final class JIT {
 
     api.free(response);
     api.free(request);
+
+    // Map the .data section as RW.
+    if (api.call(
+            mmap,
+            address + dataSectionOffset,
+            align(file.length() - dataSectionOffset, PAGE_SIZE),
+            PROT_READ | PROT_WRITE,
+            MAP_SHARED | MAP_FIXED | MAP_ANONYMOUS,
+            -1,
+            0)
+        == MAP_FAILED) {
+      throw new IllegalStateException("Could not map data section.");
+    }
+
+    // Copy .data section.
+    for (long i = dataSectionOffset; i < file.length(); i += CHUNK_SIZE) {
+      byte[] chunk = new byte[CHUNK_SIZE];
+
+      file.seek(dataSectionOffset);
+      int read = file.read(chunk, 0, (int) Math.min(file.length() - i, CHUNK_SIZE));
+
+      api.memcpy(address + i, chunk, read);
+    }
 
     return address;
   }

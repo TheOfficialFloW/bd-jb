@@ -34,6 +34,7 @@ public final class API {
   private static final String JVM_NATIVE_PATH_SYMBOL = "JVM_NativePath";
   private static final String SETJMP_SYMBOL = "setjmp";
   private static final String UX86_64_SETCONTEXT_SYMBOL = "__Ux86_64_setcontext";
+  private static final String ERROR_SYMBOL = "__error";
 
   private static final String MULTI_NEW_ARRAY_METHOD_NAME = "multiNewArray";
   private static final String MULTI_NEW_ARRAY_METHOD_SIGNATURE = "(Ljava/lang/Class;[I)J";
@@ -65,6 +66,7 @@ public final class API {
   private long JVM_NativePath;
   private long setjmp;
   private long __Ux86_64_setcontext;
+  private long __error;
 
   private boolean jdk11;
 
@@ -127,7 +129,7 @@ public final class API {
   private void initSymbols() {
     JVM_NativePath = dlsym(RTLD_DEFAULT, JVM_NATIVE_PATH_SYMBOL);
     if (JVM_NativePath == 0) {
-      throw new IllegalStateException("JVM_NativePath symbol could not be found.");
+      throw new IllegalStateException("Could not find JVM_NativePath.");
     }
 
     __Ux86_64_setcontext = dlsym(LIBKERNEL_MODULE_HANDLE, UX86_64_SETCONTEXT_SYMBOL);
@@ -145,7 +147,7 @@ public final class API {
     }
 
     if (__Ux86_64_setcontext == 0) {
-      throw new IllegalStateException("__Ux86_64_setcontext symbol could not be found.");
+      throw new IllegalStateException("Could not find __Ux86_64_setcontext.");
     }
 
     if (jdk11) {
@@ -156,13 +158,17 @@ public final class API {
           dlsym(RTLD_DEFAULT, JAVA_JAVA_LANG_REFLECT_ARRAY_MULTI_NEW_ARRAY_SYMBOL);
     }
     if (Java_java_lang_reflect_Array_multiNewArray == 0) {
-      throw new IllegalStateException(
-          "Java_java_lang_reflect_Array_multiNewArray symbol could not be found.");
+      throw new IllegalStateException("Could not find Java_java_lang_reflect_Array_multiNewArray.");
     }
 
     setjmp = dlsym(LIBC_MODULE_HANDLE, SETJMP_SYMBOL);
     if (setjmp == 0) {
-      throw new IllegalStateException("setjmp symbol could not be found.");
+      throw new IllegalStateException("Could not find setjmp.");
+    }
+
+    __error = dlsym(LIBKERNEL_MODULE_HANDLE, ERROR_SYMBOL);
+    if (__error == 0) {
+      throw new IllegalStateException("Could not find __error.");
     }
   }
 
@@ -218,7 +224,7 @@ public final class API {
       }
     }
 
-    throw new IllegalStateException("Native method could not be installed.");
+    throw new IllegalStateException("Could not install native method.");
   }
 
   private void buildContext(
@@ -343,6 +349,10 @@ public final class API {
 
   public long call(long func) {
     return call(func, (long) 0);
+  }
+
+  public int errno() {
+    return read32(call(__error));
   }
 
   public long dlsym(long handle, String symbol) {

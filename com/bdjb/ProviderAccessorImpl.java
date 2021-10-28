@@ -10,13 +10,11 @@ package com.bdjb;
 import com.oracle.ProviderAccessor;
 import com.oracle.ProviderAdapter;
 import com.oracle.security.Service;
-import java.util.Arrays;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.Set;
 import java.security.Provider;
-import java.security.Security;
 
 /** ProviderAccessor implementation that allows arbitrary services to be added. */
 class ProviderAccessorImpl implements ProviderAccessor {

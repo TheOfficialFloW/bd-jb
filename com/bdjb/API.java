@@ -20,11 +20,11 @@ public final class API {
   public static final int INT32_SIZE = 4;
   public static final int INT64_SIZE = 8;
 
-  public static final long RTLD_DEFAULT = -2;
+  public static final int RTLD_DEFAULT = -2;
 
-  public static final long LIBC_MODULE_HANDLE = 0x2;
-  public static final long LIBKERNEL_MODULE_HANDLE = 0x2001;
-  public static final long LIBJAVA_MODULE_HANDLE = 0x4A;
+  public static final int LIBC_MODULE_HANDLE = 0x2;
+  public static final int LIBKERNEL_MODULE_HANDLE = 0x2001;
+  public static final int LIBJAVA_MODULE_HANDLE = 0x4A;
 
   private static final String UNSUPPORTED_DLOPEN_OPERATION_STRING =
       "Unsupported dlopen() operation";
@@ -356,7 +356,7 @@ public final class API {
   }
 
   public long dlsym(long handle, String symbol) {
-    int oldHandle = (int) RTLD_DEFAULT;
+    int oldHandle = RTLD_DEFAULT;
     try {
       if (executableHandle != 0) {
         // In earlier versions, there's a bug where only the main executable's handle is used.

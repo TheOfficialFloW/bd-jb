@@ -14,11 +14,6 @@ import java.io.RandomAccessFile;
  * executable memory.
  */
 public final class JIT {
-  // We actually have 32MB of code memory, but reserve 8MB for Java JIT.
-  public static final int MAX_CODE_SIZE = 24 * 1024 * 1024;
-  public static final int PAGE_SIZE = 0x4000;
-  public static final int ALIGNMENT = 0x100000;
-
   public static final int PROT_NONE = 0x0;
   public static final int PROT_READ = 0x1;
   public static final int PROT_WRITE = 0x2;
@@ -30,6 +25,11 @@ public final class JIT {
   public static final int MAP_ANONYMOUS = 0x1000;
 
   public static final long MAP_FAILED = -1;
+
+  // We actually have 32MB of code memory, but reserve 8MB for Java JIT.
+  public static final int MAX_CODE_SIZE = 24 * 1024 * 1024;
+  public static final int PAGE_SIZE = 0x4000;
+  public static final int ALIGNMENT = 0x100000;
 
   private static final int CHUNK_SIZE = 0x30;
 
@@ -166,12 +166,14 @@ public final class JIT {
 
     long address = align(code, ALIGNMENT);
 
+    byte[] chunk = new byte[CHUNK_SIZE];
+
     long request = api.malloc(COMPILER_AGENT_REQUEST_SIZE);
     long response = api.malloc(API.INT8_SIZE);
 
     // Copy .text section.
     for (long i = 0; i < dataSectionOffset; i += CHUNK_SIZE) {
-      byte[] chunk = new byte[CHUNK_SIZE];
+      api.memset(chunk, 0, CHUNK_SIZE);
 
       file.seek(i);
       file.read(chunk, 0, (int) Math.min(dataSectionOffset - i, CHUNK_SIZE));
@@ -207,7 +209,7 @@ public final class JIT {
 
     // Copy .data section.
     for (long i = dataSectionOffset; i < file.length(); i += CHUNK_SIZE) {
-      byte[] chunk = new byte[CHUNK_SIZE];
+      api.memset(chunk, 0, CHUNK_SIZE);
 
       file.seek(dataSectionOffset);
       int read = file.read(chunk, 0, (int) Math.min(file.length() - i, CHUNK_SIZE));

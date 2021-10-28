@@ -14,6 +14,8 @@ import java.awt.Graphics;
 import java.util.ArrayList;
 
 public class Screen extends Container {
+  private static final long serialVersionUID = 0x4141414141414141L;
+
   private static final Font FONT = new Font(null, Font.PLAIN, 36);
 
   private static final ArrayList messages = new ArrayList();

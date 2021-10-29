@@ -211,7 +211,7 @@ public final class JIT {
     for (long i = dataSectionOffset; i < file.length(); i += CHUNK_SIZE) {
       api.memset(chunk, 0, CHUNK_SIZE);
 
-      file.seek(dataSectionOffset);
+      file.seek(i);
       int read = file.read(chunk, 0, (int) Math.min(file.length() - i, CHUNK_SIZE));
 
       api.memcpy(address + i, chunk, read);

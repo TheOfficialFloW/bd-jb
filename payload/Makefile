@@ -3,7 +3,7 @@ OBJS = start.o payload.o
 
 CC = gcc
 OBJCOPY = objcopy
-CFLAGS = -isystem freebsd-headers/include -fno-stack-protector
+CFLAGS = -isystem freebsd-headers/include -Os -fno-stack-protector
 LDFLAGS = -T linker.x -nostdlib -nostartfiles
 
 all: $(TARGET).bin

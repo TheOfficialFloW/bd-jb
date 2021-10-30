@@ -6,7 +6,9 @@ ENTRY(_start)
 SECTIONS
 {
   . = 0x916300000;
-  .text : { *(.text) }
+  .text   : { *(.text     .text.*) }
   . = 0x916304000;
-  .data : { *(.data) }
+  .rodata : { *(.rodata   .rodata.*) }
+  .data   : { *(.data     .data.*) }
+  .bss    : { *(.bss      .bss.*) }
 }

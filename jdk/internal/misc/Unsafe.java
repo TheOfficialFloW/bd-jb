@@ -46,4 +46,8 @@ public class Unsafe {
   }
 
   public void freeMemory(long address) {}
+
+  public void setMemory(long address, long bytes, byte value) {}
+
+  public void copyMemory(long srcAddress, long destAddress, long bytes) {}
 }

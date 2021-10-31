@@ -102,4 +102,12 @@ class UnsafeJdkImpl implements UnsafeInterface {
   public void freeMemory(long address) {
     unsafe.freeMemory(address);
   }
+
+  public void setMemory(long address, long bytes, byte value) {
+    unsafe.setMemory(address, bytes, value);
+  }
+
+  public void copyMemory(long srcAddress, long destAddress, long bytes) {
+    unsafe.copyMemory(srcAddress, destAddress, bytes);
+  }
 }

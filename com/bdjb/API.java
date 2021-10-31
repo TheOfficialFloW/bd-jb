@@ -48,8 +48,6 @@ public final class API {
 
   private static final String VALUE_FIELD_NAME = "value";
 
-  private static final Long LONG_VALUE = new Long(1337);
-
   private static API instance;
 
   private UnsafeInterface unsafe;
@@ -228,8 +226,8 @@ public final class API {
   }
 
   private void buildContext(
-      long contextData,
-      long setJmpData,
+      long contextBuf,
+      long setJmpBuf,
       long rip,
       long rdi,
       long rsi,
@@ -237,94 +235,101 @@ public final class API {
       long rcx,
       long r8,
       long r9) {
-    long rbx = read64(setJmpData + 0x08);
-    long rsp = read64(setJmpData + 0x10);
-    long rbp = read64(setJmpData + 0x18);
-    long r12 = read64(setJmpData + 0x20);
-    long r13 = read64(setJmpData + 0x28);
-    long r14 = read64(setJmpData + 0x30);
-    long r15 = read64(setJmpData + 0x38);
+    long rbx = read64(setJmpBuf + 0x08);
+    long rsp = read64(setJmpBuf + 0x10);
+    long rbp = read64(setJmpBuf + 0x18);
+    long r12 = read64(setJmpBuf + 0x20);
+    long r13 = read64(setJmpBuf + 0x28);
+    long r14 = read64(setJmpBuf + 0x30);
+    long r15 = read64(setJmpBuf + 0x38);
 
-    write64(contextData + 0x48, rdi);
-    write64(contextData + 0x50, rsi);
-    write64(contextData + 0x58, rdx);
-    write64(contextData + 0x60, rcx);
-    write64(contextData + 0x68, r8);
-    write64(contextData + 0x70, r9);
-    write64(contextData + 0x80, rbx);
-    write64(contextData + 0x88, rbp);
-    write64(contextData + 0xA0, r12);
-    write64(contextData + 0xA8, r13);
-    write64(contextData + 0xB0, r14);
-    write64(contextData + 0xB8, r15);
-    write64(contextData + 0xE0, rip);
-    write64(contextData + 0xF8, rsp);
+    write64(contextBuf + 0x48, rdi);
+    write64(contextBuf + 0x50, rsi);
+    write64(contextBuf + 0x58, rdx);
+    write64(contextBuf + 0x60, rcx);
+    write64(contextBuf + 0x68, r8);
+    write64(contextBuf + 0x70, r9);
+    write64(contextBuf + 0x80, rbx);
+    write64(contextBuf + 0x88, rbp);
+    write64(contextBuf + 0xA0, r12);
+    write64(contextBuf + 0xA8, r13);
+    write64(contextBuf + 0xB0, r14);
+    write64(contextBuf + 0xB8, r15);
+    write64(contextBuf + 0xE0, rip);
+    write64(contextBuf + 0xF8, rsp);
 
-    write64(contextData + 0x110, 0x41414141);
-    write64(contextData + 0x118, 0x41414141);
+    write64(contextBuf + 0x110, 0x41414141);
+    write64(contextBuf + 0x118, 0x41414141);
   }
 
   public long call(long func, long arg0, long arg1, long arg2, long arg3, long arg4, long arg5) {
     long fakeCallKlass = malloc(0x400);
+    long fakeCallKlassVtable = malloc(0x400);
+
+    if (fakeCallKlass == 0 || fakeCallKlassVtable == 0) {
+      throw new IllegalStateException("Could not allocate memory.");
+    }
+
     memset(fakeCallKlass, 0, 0x400);
 
-    long fakeCallKlassVtable = malloc(0x400);
     for (int i = 0; i < 0x400; i += 8) {
       write64(fakeCallKlassVtable + i, JVM_NativePath);
     }
 
-    long ret = 0;
+    try {
+      long ret = 0;
 
-    if (jdk11) {
-      long callClass = addrof(Call.class);
-      long callKlass = read64(callClass + 0x98);
+      if (jdk11) {
+        long callClass = addrof(Call.class);
+        long callKlass = read64(callClass + 0x98);
 
-      write64(fakeCallKlassVtable + 0x158, setjmp);
-      write64(fakeCallKlass + 0x00, fakeCallKlassVtable);
-      write64(fakeCallKlass + 0x00, fakeCallKlassVtable);
-      write64(callClass + 0x98, fakeCallKlass);
-      multiNewArray(Call.class, MULTI_NEW_ARRAY_DIMENSIONS);
+        write64(fakeCallKlassVtable + 0x158, setjmp);
+        write64(fakeCallKlass + 0x00, fakeCallKlassVtable);
+        write64(fakeCallKlass + 0x00, fakeCallKlassVtable);
+        write64(callClass + 0x98, fakeCallKlass);
+        multiNewArray(Call.class, MULTI_NEW_ARRAY_DIMENSIONS);
+        write64(callClass + 0x98, callKlass);
 
-      buildContext(
-          fakeCallKlass + 0x00, fakeCallKlass + 0x00, func, arg0, arg1, arg2, arg3, arg4, arg5);
+        buildContext(
+            fakeCallKlass + 0x00, fakeCallKlass + 0x00, func, arg0, arg1, arg2, arg3, arg4, arg5);
 
-      write64(fakeCallKlassVtable + 0x158, __Ux86_64_setcontext);
-      write64(fakeCallKlass + 0x00, fakeCallKlassVtable);
-      write64(fakeCallKlass + 0x00, fakeCallKlassVtable);
-      write64(callClass + 0x98, fakeCallKlass);
-      ret = multiNewArray(Call.class, MULTI_NEW_ARRAY_DIMENSIONS);
+        write64(fakeCallKlassVtable + 0x158, __Ux86_64_setcontext);
+        write64(fakeCallKlass + 0x00, fakeCallKlassVtable);
+        write64(fakeCallKlass + 0x00, fakeCallKlassVtable);
+        write64(callClass + 0x98, fakeCallKlass);
+        ret = multiNewArray(Call.class, MULTI_NEW_ARRAY_DIMENSIONS);
+        write64(callClass + 0x98, callKlass);
+      } else {
+        long callClass = addrof(Call.class);
+        long callKlass = read64(callClass + 0x68);
 
-      write64(callClass + 0x98, callKlass);
-    } else {
-      long callClass = addrof(Call.class);
-      long callKlass = read64(callClass + 0x68);
+        write64(fakeCallKlassVtable + 0x230, setjmp);
+        write64(fakeCallKlass + 0x10, fakeCallKlassVtable);
+        write64(fakeCallKlass + 0x20, fakeCallKlassVtable);
+        write64(callClass + 0x68, fakeCallKlass);
+        multiNewArray(Call.class, MULTI_NEW_ARRAY_DIMENSIONS);
+        write64(callClass + 0x68, callKlass);
 
-      write64(fakeCallKlassVtable + 0x230, setjmp);
-      write64(fakeCallKlass + 0x10, fakeCallKlassVtable);
-      write64(fakeCallKlass + 0x20, fakeCallKlassVtable);
-      write64(callClass + 0x68, fakeCallKlass);
-      multiNewArray(Call.class, MULTI_NEW_ARRAY_DIMENSIONS);
+        buildContext(
+            fakeCallKlass + 0x20, fakeCallKlass + 0x20, func, arg0, arg1, arg2, arg3, arg4, arg5);
 
-      buildContext(
-          fakeCallKlass + 0x20, fakeCallKlass + 0x20, func, arg0, arg1, arg2, arg3, arg4, arg5);
+        write64(fakeCallKlassVtable + 0x230, __Ux86_64_setcontext);
+        write64(fakeCallKlass + 0x10, fakeCallKlassVtable);
+        write64(fakeCallKlass + 0x20, fakeCallKlassVtable);
+        write64(callClass + 0x68, fakeCallKlass);
+        ret = multiNewArray(Call.class, MULTI_NEW_ARRAY_DIMENSIONS);
+        write64(callClass + 0x68, callKlass);
+      }
 
-      write64(fakeCallKlassVtable + 0x230, __Ux86_64_setcontext);
-      write64(fakeCallKlass + 0x10, fakeCallKlassVtable);
-      write64(fakeCallKlass + 0x20, fakeCallKlassVtable);
-      write64(callClass + 0x68, fakeCallKlass);
-      ret = multiNewArray(Call.class, MULTI_NEW_ARRAY_DIMENSIONS);
+      if (ret == 0) {
+        return 0;
+      }
 
-      write64(callClass + 0x68, callKlass);
+      return read64(ret);
+    } finally {
+      free(fakeCallKlassVtable);
+      free(fakeCallKlass);
     }
-
-    free(fakeCallKlassVtable);
-    free(fakeCallKlass);
-
-    if (ret == 0) {
-      return 0;
-    }
-
-    return read64(ret);
   }
 
   public long call(long func, long arg0, long arg1, long arg2, long arg3, long arg4) {
@@ -379,8 +384,9 @@ public final class API {
   }
 
   public long addrof(Object obj) {
-    unsafe.putObject(LONG_VALUE, longValueOffset, obj);
-    return unsafe.getLong(LONG_VALUE, longValueOffset);
+    Long longValue = new Long(1337);
+    unsafe.putObject(longValue, longValueOffset, obj);
+    return unsafe.getLong(longValue, longValueOffset);
   }
 
   public byte read8(long addr) {
@@ -428,9 +434,7 @@ public final class API {
   }
 
   public long memcpy(long dest, long src, long n) {
-    for (int i = 0; i < n; i++) {
-      write8(dest + i, read8(src + i));
-    }
+    unsafe.copyMemory(src, dest, n);
     return dest;
   }
 
@@ -449,9 +453,7 @@ public final class API {
   }
 
   public long memset(long s, int c, long n) {
-    for (int i = 0; i < n; i++) {
-      write8(s + i, (byte) c);
-    }
+    unsafe.setMemory(s, n, (byte) c);
     return s;
   }
 

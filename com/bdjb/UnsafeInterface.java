@@ -37,4 +37,8 @@ interface UnsafeInterface {
   public long reallocateMemory(long address, long bytes);
 
   public void freeMemory(long address);
+
+  public void setMemory(long address, long bytes, byte value);
+
+  public void copyMemory(long srcAddress, long destAddress, long bytes);
 }

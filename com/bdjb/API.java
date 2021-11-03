@@ -44,9 +44,9 @@ public final class API {
   private static final String FIND_ENTRY_METHOD_NAME = "findEntry";
   private static final String HANDLE_FIELD_NAME = "handle";
 
-  private static final int[] MULTI_NEW_ARRAY_DIMENSIONS = new int[] {1};
-
   private static final String VALUE_FIELD_NAME = "value";
+
+  private static final int[] MULTI_NEW_ARRAY_DIMENSIONS = new int[] {1};
 
   private static API instance;
 
@@ -227,7 +227,7 @@ public final class API {
 
   private void buildContext(
       long contextBuf,
-      long setJmpBuf,
+      long jmpBuf,
       long rip,
       long rdi,
       long rsi,
@@ -235,13 +235,13 @@ public final class API {
       long rcx,
       long r8,
       long r9) {
-    long rbx = read64(setJmpBuf + 0x08);
-    long rsp = read64(setJmpBuf + 0x10);
-    long rbp = read64(setJmpBuf + 0x18);
-    long r12 = read64(setJmpBuf + 0x20);
-    long r13 = read64(setJmpBuf + 0x28);
-    long r14 = read64(setJmpBuf + 0x30);
-    long r15 = read64(setJmpBuf + 0x38);
+    long rbx = read64(jmpBuf + 0x08);
+    long rsp = read64(jmpBuf + 0x10);
+    long rbp = read64(jmpBuf + 0x18);
+    long r12 = read64(jmpBuf + 0x20);
+    long r13 = read64(jmpBuf + 0x28);
+    long r14 = read64(jmpBuf + 0x30);
+    long r15 = read64(jmpBuf + 0x38);
 
     write64(contextBuf + 0x48, rdi);
     write64(contextBuf + 0x50, rsi);
@@ -264,7 +264,7 @@ public final class API {
 
   public void train() {
     for (int i = 0; i < 10000; i++) {
-      call(-1);
+      call(0);
     }
   }
 
@@ -286,11 +286,11 @@ public final class API {
     try {
       long ret = 0;
 
-      // When func is -1, only do one iteration to avoid calling __Ux86_64_setcontext.
+      // When func is 0, only do one iteration to avoid calling __Ux86_64_setcontext.
       // This is used to "train" this function to kick in optimization early. Otherwise, it is
       // possible that optimization kicks in between the calls to setjmp and __Ux86_64_setcontext
       // leading to different stack layouts of the two calls.
-      int iter = func == -1 ? 1 : 2;
+      int iter = func == 0 ? 1 : 2;
 
       if (jdk11) {
         write64(fakeClassOop + 0x00, fakeClass);
@@ -398,9 +398,9 @@ public final class API {
   }
 
   public long addrof(Object obj) {
-    Long longValue = new Long(1337);
-    unsafe.putObject(longValue, longValueOffset, obj);
-    return unsafe.getLong(longValue, longValueOffset);
+    Long val = new Long(1337);
+    unsafe.putObject(val, longValueOffset, obj);
+    return unsafe.getLong(val, longValueOffset);
   }
 
   public byte read8(long addr) {

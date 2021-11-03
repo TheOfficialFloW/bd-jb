@@ -138,6 +138,44 @@ public final class JIT {
     return (x + align - 1) & ~(align - 1);
   }
 
+  public long jitMap(long size, long alignment) {
+    long name = api.malloc(4);
+    api.strcpy(name, "jit");
+    long blob = api.call(BufferBlob__create, name, size);
+    api.free(name);
+    if (blob == 0) {
+      throw new IllegalStateException("Could not map JIT memory.");
+    }
+    long code = blob + api.read32(blob + 0x20);
+    return align(code, alignment);
+  }
+
+  public void jitCopy(long dest, byte[] src, long n) {
+    long req = api.malloc(COMPILER_AGENT_REQUEST_SIZE);
+    long resp = api.malloc(API.INT8_SIZE);
+
+    for (long i = 0; i < n; i += CHUNK_SIZE) {
+      byte[] chunk = new byte[CHUNK_SIZE];
+
+      System.arraycopy(src, (int) i, chunk, 0, (int) Math.min(n - i, CHUNK_SIZE));
+
+      api.memset(req, 0, COMPILER_AGENT_REQUEST_SIZE);
+      api.memcpy(req + 0x00, chunk, Math.min(n - i, CHUNK_SIZE));
+      api.write64(req + 0x38, dest + i - 0x28);
+      api.call(write, compilerAgentSocket, req, COMPILER_AGENT_REQUEST_SIZE);
+
+      api.write8(resp, (byte) 0);
+      api.call(read, compilerAgentSocket, resp, API.INT8_SIZE);
+
+      if (api.read8(resp) != ACK_MAGIC_NUMBER) {
+        throw new IllegalStateException("Wrong compiler resp.");
+      }
+    }
+
+    api.free(resp);
+    api.free(req);
+  }
+
   public long mapPayload(String path, long dataSectionOffset) throws Exception {
     RandomAccessFile file = new RandomAccessFile(path, "r");
 
@@ -155,44 +193,19 @@ public final class JIT {
     }
 
     // Allocate JIT memory.
-    long name = api.malloc(4);
-    api.strcpy(name, "jit");
-    long blob = api.call(BufferBlob__create, name, size);
-    api.free(name);
-    if (blob == 0) {
-      throw new IllegalStateException("Could not allocate JIT memory.");
-    }
-    long code = blob + api.read32(blob + 0x20);
-
-    long address = align(code, ALIGNMENT);
+    long address = jitMap(size, ALIGNMENT);
 
     byte[] chunk = new byte[CHUNK_SIZE];
-
-    long request = api.malloc(COMPILER_AGENT_REQUEST_SIZE);
-    long response = api.malloc(API.INT8_SIZE);
 
     // Copy .text section.
     for (long i = 0; i < dataSectionOffset; i += CHUNK_SIZE) {
       api.memset(chunk, 0, CHUNK_SIZE);
 
       file.seek(i);
-      file.read(chunk, 0, (int) Math.min(dataSectionOffset - i, CHUNK_SIZE));
+      int read = file.read(chunk, 0, (int) Math.min(dataSectionOffset - i, CHUNK_SIZE));
 
-      api.memset(request, 0, COMPILER_AGENT_REQUEST_SIZE);
-      api.memcpy(request + 0x00, chunk, CHUNK_SIZE);
-      api.write64(request + 0x38, address + i - 0x28);
-      api.call(write, compilerAgentSocket, request, COMPILER_AGENT_REQUEST_SIZE);
-
-      api.write8(response, (byte) 0);
-      api.call(read, compilerAgentSocket, response, API.INT8_SIZE);
-
-      if (api.read8(response) != ACK_MAGIC_NUMBER) {
-        throw new IllegalStateException("Wrong compiler response.");
-      }
+      jitCopy(address + i, chunk, read);
     }
-
-    api.free(response);
-    api.free(request);
 
     // Map the .data section as RW.
     if (api.call(

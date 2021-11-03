@@ -351,23 +351,23 @@ public final class API {
   }
 
   public long call(long func, long arg0, long arg1, long arg2, long arg3) {
-    return call(func, arg0, arg1, arg2, arg3, (long) 0);
+    return call(func, arg0, arg1, arg2, arg3, (long) 0, (long) 0);
   }
 
   public long call(long func, long arg0, long arg1, long arg2) {
-    return call(func, arg0, arg1, arg2, (long) 0);
+    return call(func, arg0, arg1, arg2, (long) 0, (long) 0, (long) 0);
   }
 
   public long call(long func, long arg0, long arg1) {
-    return call(func, arg0, arg1, (long) 0);
+    return call(func, arg0, arg1, (long) 0, (long) 0, (long) 0, (long) 0);
   }
 
   public long call(long func, long arg0) {
-    return call(func, arg0, (long) 0);
+    return call(func, arg0, (long) 0, (long) 0, (long) 0, (long) 0, (long) 0);
   }
 
   public long call(long func) {
-    return call(func, (long) 0);
+    return call(func, (long) 0, (long) 0, (long) 0, (long) 0, (long) 0, (long) 0);
   }
 
   public int errno() {

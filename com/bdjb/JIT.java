@@ -48,6 +48,7 @@ public final class JIT {
   };
 
   private static final String SCE_KERNEL_GET_MODULE_INFO_SYMBOL = "sceKernelGetModuleInfo";
+  private static final String MMAP_SYMBOL = "mmap";
   private static final String WRITE_SYMBOL = "write";
   private static final String READ_SYMBOL = "read";
 
@@ -85,7 +86,7 @@ public final class JIT {
   private void initSymbols() {
     sceKernelGetModuleInfo =
         api.dlsym(API.LIBKERNEL_MODULE_HANDLE, SCE_KERNEL_GET_MODULE_INFO_SYMBOL);
-    mmap = api.dlsym(API.LIBKERNEL_MODULE_HANDLE, "mmap");
+    mmap = api.dlsym(API.LIBKERNEL_MODULE_HANDLE, MMAP_SYMBOL);
     read = api.dlsym(API.LIBKERNEL_MODULE_HANDLE, READ_SYMBOL);
     write = api.dlsym(API.LIBKERNEL_MODULE_HANDLE, WRITE_SYMBOL);
 

@@ -15,6 +15,7 @@ CLASSES = \
 	$(SRC)/com/bdjb/JIT.java \
 	$(SRC)/com/bdjb/Screen.java \
 	$(SRC)/com/bdjb/exploit/sandbox/ExploitSandboxInterface.java \
+	$(SRC)/com/bdjb/exploit/sandbox/ExploitDefaultImpl.java \
 	$(SRC)/com/bdjb/exploit/sandbox/ExploitUserPrefsImpl.java \
 	$(SRC)/com/bdjb/exploit/sandbox/ExploitServiceProxyImpl.java \
 	$(SRC)/com/bdjb/exploit/sandbox/IxcProxyImpl.java \

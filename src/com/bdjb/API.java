@@ -81,6 +81,10 @@ public final class API {
 
   private native long multiNewArray(long componentType, int[] dimensions);
 
+  public boolean isJdk11() {
+    return jdk11;
+  }
+
   private void init() throws Exception {
     initUnsafe();
     initDlsym();
@@ -112,6 +116,7 @@ public final class API {
     }
 
     handleField = nativeLibraryClass.getDeclaredField(HANDLE_FIELD_NAME);
+
     findMethod.setAccessible(true);
     handleField.setAccessible(true);
 
@@ -174,6 +179,7 @@ public final class API {
     long apiInstance = addrof(this);
     long apiKlass = read64(apiInstance + 0x08);
 
+    boolean installed = false;
     if (jdk11) {
       long methods = read64(apiKlass + 0x170);
       int numMethods = read32(methods + 0x00);
@@ -194,7 +200,8 @@ public final class API {
         if (name.equals(MULTI_NEW_ARRAY_METHOD_NAME)
             && signature.equals(MULTI_NEW_ARRAY_METHOD_SIGNATURE)) {
           write64(method + 0x50, Java_java_lang_reflect_Array_multiNewArray);
-          return;
+          installed = true;
+          break;
         }
       }
     } else {
@@ -217,12 +224,24 @@ public final class API {
         if (name.equals(MULTI_NEW_ARRAY_METHOD_NAME)
             && signature.equals(MULTI_NEW_ARRAY_METHOD_SIGNATURE)) {
           write64(method + 0x78, Java_java_lang_reflect_Array_multiNewArray);
-          return;
+          installed = true;
+          break;
         }
       }
     }
 
-    throw new IllegalStateException("Could not install native method.");
+    if (!installed) {
+      throw new IllegalStateException("Could not install native method.");
+    }
+
+    // Invoke call method many times to kick in optimization.
+    train();
+  }
+
+  private void train() {
+    for (int i = 0; i < 10000; i++) {
+      call(0);
+    }
   }
 
   private void buildContext(
@@ -262,12 +281,6 @@ public final class API {
     write64(contextBuf + 0x118, 0);
   }
 
-  public void train() {
-    for (int i = 0; i < 10000; i++) {
-      call(0);
-    }
-  }
-
   public long call(long func, long arg0, long arg1, long arg2, long arg3, long arg4, long arg5) {
     long fakeClassOop = malloc(INT64_SIZE);
     long fakeClass = malloc(0x100);
@@ -277,11 +290,6 @@ public final class API {
     if (fakeClassOop == 0 || fakeClass == 0 || fakeKlass == 0 || fakeKlassVtable == 0) {
       throw new IllegalStateException("Could not allocate memory.");
     }
-
-    write64(fakeClassOop, 0);
-    memset(fakeClass, 0, 0x100);
-    memset(fakeKlass, 0, 0x200);
-    memset(fakeKlassVtable, 0, 0x400);
 
     try {
       long ret = 0;
@@ -306,10 +314,13 @@ public final class API {
           } else {
             write64(fakeKlassVtable + 0x158, __Ux86_64_setcontext); // multi_allocate
           }
+
           ret = multiNewArray(fakeClassOop, MULTI_NEW_ARRAY_DIMENSIONS);
 
-          buildContext(
-              fakeKlass + 0x00, fakeKlass + 0x00, func, arg0, arg1, arg2, arg3, arg4, arg5);
+          if (i == 0) {
+            buildContext(
+                fakeKlass + 0x00, fakeKlass + 0x00, func, arg0, arg1, arg2, arg3, arg4, arg5);
+          }
         }
       } else {
         write64(fakeClassOop + 0x00, fakeClass);
@@ -326,10 +337,13 @@ public final class API {
           } else {
             write64(fakeKlassVtable + 0x230, __Ux86_64_setcontext); // multi_allocate
           }
+
           ret = multiNewArray(fakeClassOop, MULTI_NEW_ARRAY_DIMENSIONS);
 
-          buildContext(
-              fakeKlass + 0x20, fakeKlass + 0x20, func, arg0, arg1, arg2, arg3, arg4, arg5);
+          if (i == 0) {
+            buildContext(
+                fakeKlass + 0x20, fakeKlass + 0x20, func, arg0, arg1, arg2, arg3, arg4, arg5);
+          }
         }
       }
 

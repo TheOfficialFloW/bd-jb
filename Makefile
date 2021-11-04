@@ -28,7 +28,7 @@ CLASSES = \
 
 JFLAGS = -Xlint:all -Xlint:-options -source 1.4 -target 1.4 -bootclasspath "$(LIB)/rt.jar:$(LIB)/bdjstack.jar"
 
-all: directory serialized classes jar bdmv
+all: directory serialized classes jar bdjo_bdmv
 
 directory:
 	mkdir -p $(BUILD)
@@ -47,7 +47,7 @@ jar:
 	cd $(BUILD) && jar cf ../$(DISC)/BDMV/JAR/00000.jar . && cd ..
 	java -cp "$(TOOLS)/security.jar:$(TOOLS)/bcprov-jdk15-137.jar:$(TOOLS)/tools.jar" net.java.bd.tools.security.BDSigner $(DISC)/BDMV/JAR/00000.jar
 
-bdmv:
+bdjo_bdmv:
 	java -jar $(TOOLS)/bdjo.jar $(BDMV)/bdjo.xml $(DISC)/BDMV/BDJO/00000.bdjo
 	java -jar $(TOOLS)/MovieObject.jar $(BDMV)/MovieObject.xml $(DISC)/BDMV/MovieObject.bdmv
 	java -jar $(TOOLS)/index.jar $(BDMV)/index.xml $(DISC)/BDMV/index.bdmv

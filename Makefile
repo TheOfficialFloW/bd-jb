@@ -1,34 +1,57 @@
-CLASSES = \
-	com/bdjb/ExploitXlet.java \
-	com/bdjb/Exploit.java \
-	com/bdjb/ExploitInterface.java \
-	com/bdjb/ExploitUserPrefsImpl.java \
-	com/bdjb/ExploitServiceProxyImpl.java \
-	com/bdjb/IxcProxyImpl.java \
-	com/bdjb/ServiceInterface.java \
-	com/bdjb/ServiceImpl.java \
-	com/bdjb/ProviderAccessorImpl.java \
-	com/bdjb/PayloadClassLoader.java \
-	com/bdjb/Payload.java \
-	com/bdjb/UnsafeInterface.java \
-	com/bdjb/UnsafeJdkImpl.java \
-	com/bdjb/UnsafeSunImpl.java \
-	com/bdjb/API.java \
-	com/bdjb/JIT.java \
-	com/bdjb/Screen.java \
+BUILD = build
+BDMV = bdmv
+DISC = disc
+LIB = lib
+SRC = src
+TOOLS = tools
 
-all:
-	javac com/bdjb/PayloadClassLoaderSerializer.java && java com/bdjb/PayloadClassLoaderSerializer
-	javac -Xlint:all -Xlint:-options -source 1.4 -target 1.4 -bootclasspath "lib/rt.jar:lib/bdjstack.jar" $(CLASSES)
-	jar cf disc/BDMV/JAR/00000.jar com/bdjb/*.class com/bdjb/*.ser com/bdjb/bluray.ExploitXlet.perm
-	java -cp "tools/security.jar:tools/bcprov-jdk15-137.jar:tools/tools.jar" net.java.bd.tools.security.BDSigner disc/BDMV/JAR/00000.jar
-	java -jar tools/bdjo.jar bdmv/bdjo.xml disc/BDMV/BDJO/00000.bdjo
-	java -jar tools/MovieObject.jar bdmv/MovieObject.xml disc/BDMV/MovieObject.bdmv
-	java -jar tools/index.jar bdmv/index.xml disc/BDMV/index.bdmv
-	java -jar tools/id.jar bdmv/id.xml disc/CERTIFICATE/id.bdmv
+CLASSES = \
+	$(SRC)/com/bdjb/ExploitXlet.java \
+	$(SRC)/com/bdjb/Exploit.java \
+	$(SRC)/com/bdjb/UnsafeInterface.java \
+	$(SRC)/com/bdjb/UnsafeJdkImpl.java \
+	$(SRC)/com/bdjb/UnsafeSunImpl.java \
+	$(SRC)/com/bdjb/API.java \
+	$(SRC)/com/bdjb/JIT.java \
+	$(SRC)/com/bdjb/Screen.java \
+	$(SRC)/com/bdjb/exploit/sandbox/ExploitSandboxInterface.java \
+	$(SRC)/com/bdjb/exploit/sandbox/ExploitUserPrefsImpl.java \
+	$(SRC)/com/bdjb/exploit/sandbox/ExploitServiceProxyImpl.java \
+	$(SRC)/com/bdjb/exploit/sandbox/IxcProxyImpl.java \
+	$(SRC)/com/bdjb/exploit/sandbox/ServiceInterface.java \
+	$(SRC)/com/bdjb/exploit/sandbox/ServiceImpl.java \
+	$(SRC)/com/bdjb/exploit/sandbox/ProviderAccessorImpl.java \
+	$(SRC)/com/bdjb/exploit/sandbox/PayloadClassLoader.java \
+	$(SRC)/com/bdjb/exploit/sandbox/Payload.java \
+	$(SRC)/com/bdjb/exploit/kernel/ExploitKernelInterface.java \
+
+JFLAGS = -Xlint:all -Xlint:-options -source 1.4 -target 1.4 -bootclasspath "$(LIB)/rt.jar:$(LIB)/bdjstack.jar"
+
+all: directory serialized classes jar bdmv
+
+directory:
+	mkdir -p $(BUILD)
+
+serialized:
+	javac -d $(BUILD) -sourcepath $(SRC) $(SRC)/com/bdjb/exploit/sandbox/PayloadClassLoaderSerializer.java
+	java -cp $(BUILD) com/bdjb/exploit/sandbox/PayloadClassLoaderSerializer $(BUILD)/com/bdjb/exploit/sandbox/PayloadClassLoader.ser
+	rm $(BUILD)/com/bdjb/exploit/sandbox/PayloadClassLoaderSerializer.class
+
+classes:
+	javac -d $(BUILD) -sourcepath $(SRC) $(JFLAGS) $(CLASSES)
+
+jar:
+	rm -rf $(BUILD)/jdk
+	cp $(SRC)/com/bdjb/bluray.ExploitXlet.perm $(BUILD)/com/bdjb/bluray.ExploitXlet.perm
+	cd $(BUILD) && jar cf ../$(DISC)/BDMV/JAR/00000.jar . && cd ..
+	java -cp "$(TOOLS)/security.jar:$(TOOLS)/bcprov-jdk15-137.jar:$(TOOLS)/tools.jar" net.java.bd.tools.security.BDSigner $(DISC)/BDMV/JAR/00000.jar
+
+bdmv:
+	java -jar $(TOOLS)/bdjo.jar $(BDMV)/bdjo.xml $(DISC)/BDMV/BDJO/00000.bdjo
+	java -jar $(TOOLS)/MovieObject.jar $(BDMV)/MovieObject.xml $(DISC)/BDMV/MovieObject.bdmv
+	java -jar $(TOOLS)/index.jar $(BDMV)/index.xml $(DISC)/BDMV/index.bdmv
+	java -jar $(TOOLS)/id.jar $(BDMV)/id.xml $(DISC)/CERTIFICATE/id.bdmv
 
 clean:
-	rm -rf jdk/internal/misc/*.class
-	rm -rf com/bdjb/*.class
-	rm -rf com/bdjb/*.ser
+	rm -rf build
 	rm -rf META-INF

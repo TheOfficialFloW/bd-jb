@@ -1,4 +1,5 @@
 .idea/
+build/
 tools/
 lib/
 disc/CERTIFICATE/id.bdmv

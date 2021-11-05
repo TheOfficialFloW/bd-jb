@@ -5,7 +5,7 @@
  * of the MIT license.  See the LICENSE file for details.
  */
 
-package com.bdjb;
+package com.bdjb.api;
 
 import java.lang.reflect.Field;
 

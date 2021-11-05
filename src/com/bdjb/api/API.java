@@ -5,7 +5,7 @@
  * of the MIT license.  See the LICENSE file for details.
  */
 
-package com.bdjb;
+package com.bdjb.api;
 
 import java.io.ByteArrayOutputStream;
 import java.lang.reflect.Constructor;
@@ -136,7 +136,6 @@ public final class API {
     }
 
     __Ux86_64_setcontext = dlsym(LIBKERNEL_MODULE_HANDLE, UX86_64_SETCONTEXT_SYMBOL);
-
     if (__Ux86_64_setcontext == 0) {
       // In earlier versions, there's a bug where only the main executable's handle is used.
       executableHandle = JVM_NativePath & ~(4 - 1);
@@ -148,7 +147,6 @@ public final class API {
       // Try again.
       __Ux86_64_setcontext = dlsym(LIBKERNEL_MODULE_HANDLE, UX86_64_SETCONTEXT_SYMBOL);
     }
-
     if (__Ux86_64_setcontext == 0) {
       throw new IllegalStateException("Could not find __Ux86_64_setcontext.");
     }

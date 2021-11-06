@@ -11,6 +11,12 @@ CLASSES = \
 	$(SRC)/com/bdjb/JIT.java \
 	$(SRC)/com/bdjb/Screen.java \
 	$(SRC)/com/bdjb/api/API.java \
+	$(SRC)/com/bdjb/api/Buffer.java \
+	$(SRC)/com/bdjb/api/IntBase.java \
+	$(SRC)/com/bdjb/api/Int8.java \
+	$(SRC)/com/bdjb/api/Int16.java \
+	$(SRC)/com/bdjb/api/Int32.java \
+	$(SRC)/com/bdjb/api/Int64.java \
 	$(SRC)/com/bdjb/api/UnsafeInterface.java \
 	$(SRC)/com/bdjb/api/UnsafeJdkImpl.java \
 	$(SRC)/com/bdjb/api/UnsafeSunImpl.java \

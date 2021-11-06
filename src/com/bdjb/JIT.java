@@ -8,6 +8,8 @@
 package com.bdjb;
 
 import com.bdjb.api.API;
+import com.bdjb.api.Buffer;
+import com.bdjb.api.Int8;
 import java.io.RandomAccessFile;
 
 /**
@@ -97,17 +99,15 @@ public final class JIT {
   }
 
   private void initJitHelpers() {
-    long modinfo = api.malloc(SCE_KERNEL_MODULE_INFO_SIZE);
-    api.memset(modinfo, 0, SCE_KERNEL_MODULE_INFO_SIZE);
-    api.write64(modinfo + 0x00, SCE_KERNEL_MODULE_INFO_SIZE);
-    if (api.call(sceKernelGetModuleInfo, BDJ_MODULE_HANDLE, modinfo) != 0) {
+    Buffer modinfo = new Buffer(SCE_KERNEL_MODULE_INFO_SIZE);
+    modinfo.fill((byte) 0);
+    modinfo.putLong(0x00, SCE_KERNEL_MODULE_INFO_SIZE);
+    if (api.call(sceKernelGetModuleInfo, BDJ_MODULE_HANDLE, modinfo.address()) != 0) {
       throw new IllegalStateException("sceKernelGetModuleInfo failed.");
     }
 
-    long bdjBase = api.read64(modinfo + 0x108);
-    long bdjSize = api.read32(modinfo + 0x110);
-
-    api.free(modinfo);
+    long bdjBase = modinfo.getLong(0x108);
+    int bdjSize = modinfo.getInt(0x110);
 
     int i = 0;
     while (i < bdjSize
@@ -141,10 +141,9 @@ public final class JIT {
   }
 
   public long jitMap(long size, long alignment) {
-    long name = api.malloc(4);
-    api.strcpy(name, "jit");
-    long blob = api.call(BufferBlob__create, name, size);
-    api.free(name);
+    Buffer name = new Buffer(4);
+    api.strcpy(name.address(), "jit");
+    long blob = api.call(BufferBlob__create, name.address(), size);
     if (blob == 0) {
       throw new IllegalStateException("Could not map JIT memory.");
     }
@@ -154,7 +153,7 @@ public final class JIT {
 
   public void jitCopy(long dest, byte[] src, long n) {
     long req = api.malloc(COMPILER_AGENT_REQUEST_SIZE);
-    long resp = api.malloc(API.INT8_SIZE);
+    long resp = api.malloc(Int8.SIZE);
 
     for (long i = 0; i < n; i += CHUNK_SIZE) {
       byte[] chunk = new byte[CHUNK_SIZE];
@@ -167,7 +166,7 @@ public final class JIT {
       api.call(write, compilerAgentSocket, req, COMPILER_AGENT_REQUEST_SIZE);
 
       api.write8(resp, (byte) 0);
-      api.call(read, compilerAgentSocket, resp, API.INT8_SIZE);
+      api.call(read, compilerAgentSocket, resp, Int8.SIZE);
 
       if (api.read8(resp) != ACK_MAGIC_NUMBER) {
         throw new IllegalStateException("Wrong compiler resp.");

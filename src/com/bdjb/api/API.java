@@ -15,11 +15,6 @@ import java.lang.reflect.Method;
 
 /** API class to access native data and execute native code. */
 public final class API {
-  public static final int INT8_SIZE = 1;
-  public static final int INT16_SIZE = 2;
-  public static final int INT32_SIZE = 4;
-  public static final int INT64_SIZE = 8;
-
   public static final int RTLD_DEFAULT = -2;
 
   public static final int LIBC_MODULE_HANDLE = 0x2;
@@ -280,7 +275,7 @@ public final class API {
   }
 
   public long call(long func, long arg0, long arg1, long arg2, long arg3, long arg4, long arg5) {
-    long fakeClassOop = malloc(INT64_SIZE);
+    long fakeClassOop = malloc(Int64.SIZE);
     long fakeClass = malloc(0x100);
     long fakeKlass = malloc(0x200);
     long fakeKlassVtable = malloc(0x400);

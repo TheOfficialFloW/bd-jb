@@ -72,7 +72,7 @@ abstract class IntBase {
   }
 
   private void checkOffset(int offset) {
-    if (offset < 0 || offset >= size) {
+    if (offset < 0 || (offset + elementSize()) > size) {
       throw new IndexOutOfBoundsException();
     }
   }

@@ -40,42 +40,42 @@ public class Buffer {
   }
 
   public byte getByte(int offset) {
-    checkOffset(offset);
+    checkOffset(offset, Int8.SIZE);
     return api.read8(address + offset);
   }
 
   public short getShort(int offset) {
-    checkOffset(offset);
+    checkOffset(offset, Int16.SIZE);
     return api.read16(address + offset);
   }
 
   public int getInt(int offset) {
-    checkOffset(offset);
+    checkOffset(offset, Int32.SIZE);
     return api.read32(address + offset);
   }
 
   public long getLong(int offset) {
-    checkOffset(offset);
+    checkOffset(offset, Int64.SIZE);
     return api.read64(address + offset);
   }
 
   public void putByte(int offset, byte value) {
-    checkOffset(offset);
+    checkOffset(offset, Int8.SIZE);
     api.write8(address + offset, value);
   }
 
   public void putShort(int offset, short value) {
-    checkOffset(offset);
+    checkOffset(offset, Int16.SIZE);
     api.write16(address + offset, value);
   }
 
   public void putInt(int offset, int value) {
-    checkOffset(offset);
+    checkOffset(offset, Int32.SIZE);
     api.write32(address + offset, value);
   }
 
   public void putLong(int offset, long value) {
-    checkOffset(offset);
+    checkOffset(offset, Int64.SIZE);
     api.write64(address + offset, value);
   }
 
@@ -83,8 +83,8 @@ public class Buffer {
     api.memset(address, value, size);
   }
 
-  private void checkOffset(int offset) {
-    if (offset < 0 || offset >= size) {
+  private void checkOffset(int offset, int length) {
+    if (offset < 0 || (offset + length) > size) {
       throw new IndexOutOfBoundsException();
     }
   }

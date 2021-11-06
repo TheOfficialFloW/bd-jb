@@ -79,6 +79,11 @@ public class Buffer {
     api.write64(address + offset, value);
   }
 
+  public void put(int offset, Buffer buffer) {
+    checkOffset(offset, buffer.size());
+    api.memcpy(address + offset, buffer.address(), buffer.size());
+  }
+
   public void fill(byte value) {
     api.memset(address, value, size);
   }

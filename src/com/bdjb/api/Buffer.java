@@ -89,7 +89,7 @@ public class Buffer {
   }
 
   private void checkOffset(int offset, int length) {
-    if (offset < 0 || (offset + length) > size) {
+    if (offset < 0 || length < 0 || (offset + length) > size) {
       throw new IndexOutOfBoundsException();
     }
   }

@@ -16,7 +16,7 @@ import java.util.ArrayList;
 public class Screen extends Container {
   private static final long serialVersionUID = 0x4141414141414141L;
 
-  private static final Font FONT = new Font(null, Font.PLAIN, 36);
+  private static final Font FONT = new Font(null, Font.PLAIN, 40);
 
   private static final ArrayList messages = new ArrayList();
 
@@ -35,8 +35,8 @@ public class Screen extends Container {
     g.setFont(FONT);
     g.setColor(Color.WHITE);
 
-    int x = 100;
-    int y = 100;
+    int x = 80;
+    int y = 80;
     int height = g.getFontMetrics().getHeight();
     for (int i = 0; i < messages.size(); i++) {
       String msg = (String) messages.get(i);

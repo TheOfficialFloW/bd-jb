@@ -23,8 +23,8 @@ public class Buffer {
   private final int size;
 
   public Buffer(int size) {
-    this.address = api.malloc(size);
     this.size = size;
+    this.address = api.malloc(size);
   }
 
   public void finalize() {

@@ -23,7 +23,7 @@ public final class Int32 extends IntBase {
     this.set(value);
   }
 
-  int elementSize() {
+  protected int elementSize() {
     return SIZE;
   }
 

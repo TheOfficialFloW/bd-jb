@@ -23,7 +23,7 @@ public final class Int8 extends IntBase {
     this.set(value);
   }
 
-  int elementSize() {
+  protected int elementSize() {
     return SIZE;
   }
 

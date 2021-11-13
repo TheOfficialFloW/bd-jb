@@ -8,7 +8,6 @@ TOOLS = tools
 CLASSES = \
 	$(SRC)/com/bdjb/ExploitXlet.java \
 	$(SRC)/com/bdjb/Exploit.java \
-	$(SRC)/com/bdjb/JIT.java \
 	$(SRC)/com/bdjb/Screen.java \
 	$(SRC)/com/bdjb/api/API.java \
 	$(SRC)/com/bdjb/api/Buffer.java \
@@ -21,6 +20,9 @@ CLASSES = \
 	$(SRC)/com/bdjb/api/UnsafeInterface.java \
 	$(SRC)/com/bdjb/api/UnsafeJdkImpl.java \
 	$(SRC)/com/bdjb/api/UnsafeSunImpl.java \
+	$(SRC)/com/bdjb/jit/AbstractJit.java \
+	$(SRC)/com/bdjb/jit/JitDefaultImpl.java \
+	$(SRC)/com/bdjb/jit/JitCompilerReceiverImpl.java \
 	$(SRC)/com/bdjb/exploit/sandbox/ExploitSandboxInterface.java \
 	$(SRC)/com/bdjb/exploit/sandbox/ExploitDefaultImpl.java \
 	$(SRC)/com/bdjb/exploit/sandbox/ExploitUserPrefsImpl.java \

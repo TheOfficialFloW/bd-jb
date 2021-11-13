@@ -7,7 +7,7 @@
 
 package com.bdjb.api;
 
-public final class Int8 extends IntBase {
+public final class Int8 extends AbstractInt {
   public static final int SIZE = 1;
 
   public Int8(int[] dimensions) {

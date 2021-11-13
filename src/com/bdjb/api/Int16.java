@@ -7,7 +7,7 @@
 
 package com.bdjb.api;
 
-public final class Int16 extends IntBase {
+public final class Int16 extends AbstractInt {
   public static final int SIZE = 2;
 
   public Int16(int[] dimensions) {

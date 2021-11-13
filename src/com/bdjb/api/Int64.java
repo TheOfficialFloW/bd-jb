@@ -7,7 +7,7 @@
 
 package com.bdjb.api;
 
-public final class Int64 extends IntBase {
+public final class Int64 extends AbstractInt {
   public static final int SIZE = 8;
 
   public Int64(int[] dimensions) {

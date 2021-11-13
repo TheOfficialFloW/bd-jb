@@ -155,29 +155,28 @@ public final class JIT {
   }
 
   public void jitCopy(long dest, byte[] src, long n) {
-    long req = api.malloc(COMPILER_AGENT_REQUEST_SIZE);
-    long resp = api.malloc(Int8.SIZE);
+    Buffer req = new Buffer(COMPILER_AGENT_REQUEST_SIZE);
+    Int8 resp = new Int8();
+
+    byte[] chunk = new byte[CHUNK_SIZE];
 
     for (long i = 0; i < n; i += CHUNK_SIZE) {
-      byte[] chunk = new byte[CHUNK_SIZE];
+      api.memset(chunk, 0, CHUNK_SIZE);
 
       System.arraycopy(src, (int) i, chunk, 0, (int) Math.min(n - i, CHUNK_SIZE));
 
-      api.memset(req, 0, COMPILER_AGENT_REQUEST_SIZE);
-      api.memcpy(req + 0x00, chunk, Math.min(n - i, CHUNK_SIZE));
-      api.write64(req + 0x38, dest + i - 0x28);
-      api.call(write, compilerAgentSocket, req, COMPILER_AGENT_REQUEST_SIZE);
+      req.fill((byte) 0);
+      req.put(0x00, chunk);
+      req.putLong(0x38, dest + i - 0x28);
+      api.call(write, compilerAgentSocket, req.address(), req.size());
 
-      api.write8(resp, (byte) 0);
-      api.call(read, compilerAgentSocket, resp, Int8.SIZE);
+      resp.set((byte) 0);
+      api.call(read, compilerAgentSocket, resp.address(), resp.size());
 
-      if (api.read8(resp) != ACK_MAGIC_NUMBER) {
+      if (resp.get() != ACK_MAGIC_NUMBER) {
         throw new AssertionError("wrong compiler response");
       }
     }
-
-    api.free(resp);
-    api.free(req);
   }
 
   public long mapPayload(String path, long dataSectionOffset) throws Exception {

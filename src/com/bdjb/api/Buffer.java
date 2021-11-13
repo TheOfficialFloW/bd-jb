@@ -18,9 +18,9 @@ public class Buffer {
     }
   }
 
-  protected final long address;
+  private final long address;
 
-  protected final int size;
+  private final int size;
 
   public Buffer(int size) {
     this.size = size;

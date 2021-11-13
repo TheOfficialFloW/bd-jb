@@ -13,7 +13,7 @@ public class Text extends Buffer {
   public Text(String text) {
     super(text.length() + 1);
     this.text = text;
-    api.strcpy(address, text);
+    api.strcpy(address(), text);
   }
 
   public String toString() {

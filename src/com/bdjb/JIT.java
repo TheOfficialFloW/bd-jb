@@ -10,6 +10,7 @@ package com.bdjb;
 import com.bdjb.api.API;
 import com.bdjb.api.Buffer;
 import com.bdjb.api.Int8;
+import com.bdjb.api.Text;
 import java.io.RandomAccessFile;
 
 /**
@@ -94,7 +95,7 @@ public final class JIT {
     write = api.dlsym(API.LIBKERNEL_MODULE_HANDLE, WRITE_SYMBOL);
 
     if (sceKernelGetModuleInfo == 0 || read == 0 || write == 0) {
-      throw new IllegalStateException("Could not find symbols.");
+      throw new InternalError("symbols not found");
     }
   }
 
@@ -103,7 +104,7 @@ public final class JIT {
     modinfo.fill((byte) 0);
     modinfo.putLong(0x00, SCE_KERNEL_MODULE_INFO_SIZE);
     if (api.call(sceKernelGetModuleInfo, BDJ_MODULE_HANDLE, modinfo.address()) != 0) {
-      throw new IllegalStateException("sceKernelGetModuleInfo failed.");
+      throw new InternalError("sceKernelGetModuleInfo failed");
     }
 
     long bdjBase = modinfo.getLong(0x108);
@@ -115,7 +116,7 @@ public final class JIT {
       i++;
     }
     if (i == bdjSize) {
-      throw new IllegalStateException("Could not find BufferBlob::create.");
+      throw new InternalError("BufferBlob::create not found");
     }
     BufferBlob__create = bdjBase + i - 0x21;
 
@@ -129,7 +130,7 @@ public final class JIT {
       i++;
     }
     if (i == bdjSize) {
-      throw new IllegalStateException("Could not find compiler agent socket.");
+      throw new InternalError("compiler agent socket not found");
     }
     long compilerAgentSocketOpcode = bdjBase + i - 0x10;
     compilerAgentSocket =
@@ -141,11 +142,13 @@ public final class JIT {
   }
 
   public long jitMap(long size, long alignment) {
-    Buffer name = new Buffer(4);
-    api.strcpy(name.address(), "jit");
-    long blob = api.call(BufferBlob__create, name.address(), size);
+    if (size >= MAX_CODE_SIZE) {
+      throw new IllegalArgumentException("size too big");
+    }
+    Text name = new Text("jit");
+    long blob = api.call(BufferBlob__create, name.address(), size + 0x88 + alignment - 1);
     if (blob == 0) {
-      throw new IllegalStateException("Could not map JIT memory.");
+      throw new OutOfMemoryError("BufferBlob__create failed");
     }
     long code = blob + api.read32(blob + 0x20);
     return align(code, alignment);
@@ -169,7 +172,7 @@ public final class JIT {
       api.call(read, compilerAgentSocket, resp, Int8.SIZE);
 
       if (api.read8(resp) != ACK_MAGIC_NUMBER) {
-        throw new IllegalStateException("Wrong compiler resp.");
+        throw new AssertionError("wrong compiler response");
       }
     }
 
@@ -181,20 +184,15 @@ public final class JIT {
     RandomAccessFile file = new RandomAccessFile(path, "r");
 
     if ((dataSectionOffset & (PAGE_SIZE - 1)) != 0) {
-      throw new IllegalArgumentException("Unaligned data section offset.");
+      throw new IllegalArgumentException("unaligned data section offset");
     }
 
     if (dataSectionOffset < 0 || dataSectionOffset > file.length()) {
-      throw new IllegalArgumentException("Invalid data section offset.");
-    }
-
-    long size = file.length() + 0x88 + ALIGNMENT - 1;
-    if (size >= MAX_CODE_SIZE) {
-      throw new IllegalArgumentException("Payload is too big.");
+      throw new IllegalArgumentException("invalid data section offset");
     }
 
     // Allocate JIT memory.
-    long address = jitMap(size, ALIGNMENT);
+    long address = jitMap(file.length(), ALIGNMENT);
 
     byte[] chunk = new byte[CHUNK_SIZE];
 
@@ -218,7 +216,7 @@ public final class JIT {
             -1,
             0)
         == MAP_FAILED) {
-      throw new IllegalStateException("Could not map data section.");
+      throw new InternalError("mmap failed");
     }
 
     // Copy .data section.

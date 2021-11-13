@@ -127,7 +127,7 @@ public final class API {
   private void initSymbols() {
     JVM_NativePath = dlsym(RTLD_DEFAULT, JVM_NATIVE_PATH_SYMBOL);
     if (JVM_NativePath == 0) {
-      throw new IllegalStateException("Could not find JVM_NativePath.");
+      throw new InternalError("JVM_NativePath not found");
     }
 
     __Ux86_64_setcontext = dlsym(LIBKERNEL_MODULE_HANDLE, UX86_64_SETCONTEXT_SYMBOL);
@@ -143,7 +143,7 @@ public final class API {
       __Ux86_64_setcontext = dlsym(LIBKERNEL_MODULE_HANDLE, UX86_64_SETCONTEXT_SYMBOL);
     }
     if (__Ux86_64_setcontext == 0) {
-      throw new IllegalStateException("Could not find __Ux86_64_setcontext.");
+      throw new InternalError("__Ux86_64_setcontext not found");
     }
 
     if (jdk11) {
@@ -154,17 +154,17 @@ public final class API {
           dlsym(RTLD_DEFAULT, JAVA_JAVA_LANG_REFLECT_ARRAY_MULTI_NEW_ARRAY_SYMBOL);
     }
     if (Java_java_lang_reflect_Array_multiNewArray == 0) {
-      throw new IllegalStateException("Could not find Java_java_lang_reflect_Array_multiNewArray.");
+      throw new InternalError("Java_java_lang_reflect_Array_multiNewArray not found");
     }
 
     setjmp = dlsym(LIBC_MODULE_HANDLE, SETJMP_SYMBOL);
     if (setjmp == 0) {
-      throw new IllegalStateException("Could not find setjmp.");
+      throw new InternalError("setjmp not found");
     }
 
     __error = dlsym(LIBKERNEL_MODULE_HANDLE, ERROR_SYMBOL);
     if (__error == 0) {
-      throw new IllegalStateException("Could not find __error.");
+      throw new InternalError("__error not found");
     }
   }
 
@@ -224,7 +224,7 @@ public final class API {
     }
 
     if (!installed) {
-      throw new IllegalStateException("Could not install native method.");
+      throw new InternalError("installing native method failed");
     }
 
     // Invoke call method many times to kick in optimization.
@@ -281,7 +281,7 @@ public final class API {
     long fakeKlassVtable = malloc(0x400);
 
     if (fakeClassOop == 0 || fakeClass == 0 || fakeKlass == 0 || fakeKlassVtable == 0) {
-      throw new IllegalStateException("Could not allocate memory.");
+      throw new OutOfMemoryError("malloc failed");
     }
 
     try {

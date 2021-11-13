@@ -86,13 +86,13 @@ public final class JitDefaultImpl extends AbstractJit {
             align(size + alignment - 1, PAGE_SIZE),
             PROT_READ | PROT_WRITE | PROT_EXEC,
             sharedHandle)
-        < 0) {
+        != 0) {
       throw new InternalError("sceKernelJitCreateSharedMemory failed");
     }
 
     if (sceKernelJitCreateAliasOfSharedMemory(
             sharedHandle.get(), PROT_READ | PROT_WRITE, aliasHandle)
-        < 0) {
+        != 0) {
       throw new InternalError("sceKernelJitCreateAliasOfSharedMemory failed");
     }
 

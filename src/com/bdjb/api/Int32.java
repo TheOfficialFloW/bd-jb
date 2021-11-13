@@ -10,17 +10,20 @@ package com.bdjb.api;
 public final class Int32 extends AbstractInt {
   public static final int SIZE = 4;
 
-  public Int32(int[] dimensions) {
-    super(dimensions, SIZE);
-  }
-
   public Int32() {
     super(SIZE);
   }
 
-  public Int32(int value) {
-    this();
-    this.set(value);
+  public Int32(long address) {
+    super(address, SIZE);
+  }
+
+  public Int32(int[] dimensions) {
+    super(dimensions, SIZE);
+  }
+
+  public Int32(long address, int[] dimensions) {
+    super(address, dimensions, SIZE);
   }
 
   public int get() {

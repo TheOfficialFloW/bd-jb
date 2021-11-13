@@ -18,6 +18,16 @@ abstract class AbstractInt extends Buffer {
     this.elementSize = elementSize;
   }
 
+  protected AbstractInt(long address, int[] dimensions, int elementSize) {
+    super(address, size(dimensions, elementSize));
+    this.dimensions = dimensions;
+    this.elementSize = elementSize;
+  }
+
+  protected AbstractInt(long address, int elementSize) {
+    this(address, new int[] {1}, elementSize);
+  }
+
   protected AbstractInt(int elementSize) {
     this(new int[] {1}, elementSize);
   }

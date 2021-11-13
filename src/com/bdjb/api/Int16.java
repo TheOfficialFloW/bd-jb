@@ -10,17 +10,20 @@ package com.bdjb.api;
 public final class Int16 extends AbstractInt {
   public static final int SIZE = 2;
 
-  public Int16(int[] dimensions) {
-    super(dimensions, SIZE);
-  }
-
   public Int16() {
     super(SIZE);
   }
 
-  public Int16(short value) {
-    this();
-    this.set(value);
+  public Int16(long address) {
+    super(address, SIZE);
+  }
+
+  public Int16(int[] dimensions) {
+    super(dimensions, SIZE);
+  }
+
+  public Int16(long address, int[] dimensions) {
+    super(address, dimensions, SIZE);
   }
 
   public short get() {

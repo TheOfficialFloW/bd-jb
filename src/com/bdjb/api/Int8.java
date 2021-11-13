@@ -10,17 +10,20 @@ package com.bdjb.api;
 public final class Int8 extends AbstractInt {
   public static final int SIZE = 1;
 
-  public Int8(int[] dimensions) {
-    super(dimensions, SIZE);
-  }
-
   public Int8() {
     super(SIZE);
   }
 
-  public Int8(byte value) {
-    this();
-    this.set(value);
+  public Int8(long address) {
+    super(address, SIZE);
+  }
+
+  public Int8(int[] dimensions) {
+    super(dimensions, SIZE);
+  }
+
+  public Int8(long address, int[] dimensions) {
+    super(address, dimensions, SIZE);
   }
 
   public byte get() {

@@ -22,13 +22,24 @@ public class Buffer {
 
   private final int size;
 
+  private final boolean allocated;
+
   public Buffer(int size) {
-    this.size = size;
     this.address = api.malloc(size);
+    this.size = size;
+    this.allocated = true;
+  }
+
+  public Buffer(long address, int size) {
+    this.address = address;
+    this.size = size;
+    this.allocated = false;
   }
 
   public void finalize() {
-    api.free(address);
+    if (allocated) {
+      api.free(address);
+    }
   }
 
   public long address() {

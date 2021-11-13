@@ -11,11 +11,11 @@ public final class Int16 extends AbstractInt {
   public static final int SIZE = 2;
 
   public Int16(int[] dimensions) {
-    super(dimensions);
+    super(dimensions, SIZE);
   }
 
   public Int16() {
-    super();
+    super(SIZE);
   }
 
   public Int16(short value) {
@@ -23,23 +23,19 @@ public final class Int16 extends AbstractInt {
     this.set(value);
   }
 
-  protected int elementSize() {
-    return SIZE;
-  }
-
   public short get() {
-    return api.read16(address);
+    return getShort(0x00);
   }
 
   public void set(short value) {
-    api.write16(address, value);
+    putShort(0x00, value);
   }
 
   public short get(int[] indices) {
-    return api.read16(address + offset(indices));
+    return getShort(offset(indices));
   }
 
   public void set(int[] indices, short value) {
-    api.write16(address + offset(indices), value);
+    putShort(offset(indices), value);
   }
 }

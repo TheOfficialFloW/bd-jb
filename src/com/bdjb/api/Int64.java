@@ -11,11 +11,11 @@ public final class Int64 extends AbstractInt {
   public static final int SIZE = 8;
 
   public Int64(int[] dimensions) {
-    super(dimensions);
+    super(dimensions, SIZE);
   }
 
   public Int64() {
-    super();
+    super(SIZE);
   }
 
   public Int64(long value) {
@@ -23,23 +23,19 @@ public final class Int64 extends AbstractInt {
     this.set(value);
   }
 
-  protected int elementSize() {
-    return SIZE;
-  }
-
   public long get() {
-    return api.read64(address);
+    return getLong(0x00);
   }
 
   public void set(long value) {
-    api.write64(address, value);
+    putLong(0x00, value);
   }
 
   public long get(int[] indices) {
-    return api.read64(address + offset(indices));
+    return getLong(offset(indices));
   }
 
   public void set(int[] indices, long value) {
-    api.write64(address + offset(indices), value);
+    putLong(offset(indices), value);
   }
 }

@@ -11,11 +11,11 @@ public final class Int32 extends AbstractInt {
   public static final int SIZE = 4;
 
   public Int32(int[] dimensions) {
-    super(dimensions);
+    super(dimensions, SIZE);
   }
 
   public Int32() {
-    super();
+    super(SIZE);
   }
 
   public Int32(int value) {
@@ -23,23 +23,19 @@ public final class Int32 extends AbstractInt {
     this.set(value);
   }
 
-  protected int elementSize() {
-    return SIZE;
-  }
-
   public int get() {
-    return api.read32(address);
+    return getInt(0x00);
   }
 
   public void set(int value) {
-    api.write32(address, value);
+    putInt(0x00, value);
   }
 
   public int get(int[] indices) {
-    return api.read32(address + offset(indices));
+    return getInt(offset(indices));
   }
 
   public void set(int[] indices, int value) {
-    api.write32(address + offset(indices), value);
+    putInt(offset(indices), value);
   }
 }

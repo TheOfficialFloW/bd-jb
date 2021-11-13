@@ -7,54 +7,28 @@
 
 package com.bdjb.api;
 
-abstract class AbstractInt {
-  protected static final API api;
+abstract class AbstractInt extends Buffer {
+  private final int[] dimensions;
 
-  static {
-    try {
-      api = API.getInstance();
-    } catch (Exception e) {
-      throw new ExceptionInInitializerError(e);
-    }
-  }
+  private final int elementSize;
 
-  protected final long address;
-
-  protected final int size;
-
-  protected final int[] dimensions;
-
-  protected AbstractInt(int[] dimensions) {
+  protected AbstractInt(int[] dimensions, int elementSize) {
+    super(size(dimensions, elementSize));
     this.dimensions = dimensions;
-    this.size = size(dimensions);
-    this.address = api.malloc(size);
+    this.elementSize = elementSize;
   }
 
-  protected AbstractInt() {
-    this(new int[] {1});
+  protected AbstractInt(int elementSize) {
+    this(new int[] {1}, elementSize);
   }
 
-  protected abstract int elementSize();
-
-  public void finalize() {
-    api.free(address);
-  }
-
-  public long address() {
-    return address;
-  }
-
-  public int size() {
-    return size;
-  }
-
-  public int size(int[] dimensions) {
+  static int size(int[] dimensions, int elementSize) {
     assert (dimensions.length > 0);
     int size = 1;
     for (int i = 0; i < dimensions.length; i++) {
       size *= dimensions[i];
     }
-    size *= elementSize();
+    size *= elementSize;
     return size;
   }
 
@@ -66,14 +40,8 @@ abstract class AbstractInt {
       offset += stride * indices[i];
       stride *= dimensions[i];
     }
-    offset *= elementSize();
-    checkOffset(offset);
+    offset *= elementSize;
+    checkOffset(offset, elementSize);
     return offset;
-  }
-
-  private void checkOffset(int offset) {
-    if (offset < 0 || (offset + elementSize()) > size) {
-      throw new IndexOutOfBoundsException();
-    }
   }
 }

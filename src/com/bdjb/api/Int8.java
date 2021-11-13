@@ -11,11 +11,11 @@ public final class Int8 extends AbstractInt {
   public static final int SIZE = 1;
 
   public Int8(int[] dimensions) {
-    super(dimensions);
+    super(dimensions, SIZE);
   }
 
   public Int8() {
-    super();
+    super(SIZE);
   }
 
   public Int8(byte value) {
@@ -23,23 +23,19 @@ public final class Int8 extends AbstractInt {
     this.set(value);
   }
 
-  protected int elementSize() {
-    return SIZE;
-  }
-
   public byte get() {
-    return api.read8(address);
+    return getByte(0x00);
   }
 
   public void set(byte value) {
-    api.write8(address, value);
+    putByte(0x00, value);
   }
 
   public byte get(int[] indices) {
-    return api.read8(address + offset(indices));
+    return getByte(offset(indices));
   }
 
   public void set(int[] indices, byte value) {
-    api.write8(address + offset(indices), value);
+    putByte(offset(indices), value);
   }
 }

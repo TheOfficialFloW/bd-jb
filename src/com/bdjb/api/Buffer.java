@@ -8,7 +8,7 @@
 package com.bdjb.api;
 
 public class Buffer {
-  private static final API api;
+  protected static final API api;
 
   static {
     try {
@@ -18,9 +18,9 @@ public class Buffer {
     }
   }
 
-  private final long address;
+  protected final long address;
 
-  private final int size;
+  protected final int size;
 
   public Buffer(int size) {
     this.size = size;
@@ -84,11 +84,16 @@ public class Buffer {
     api.memcpy(address + offset, buffer.address(), buffer.size());
   }
 
+  public void put(int offset, byte[] buffer) {
+    checkOffset(offset, buffer.length);
+    api.memcpy(address + offset, buffer, buffer.length);
+  }
+
   public void fill(byte value) {
     api.memset(address, value, size);
   }
 
-  private void checkOffset(int offset, int length) {
+  protected void checkOffset(int offset, int length) {
     if (offset < 0 || length < 0 || (offset + length) > size) {
       throw new IndexOutOfBoundsException();
     }

@@ -10,9 +10,10 @@ CLASSES = \
 	$(SRC)/com/bdjb/Exploit.java \
 	$(SRC)/com/bdjb/JIT.java \
 	$(SRC)/com/bdjb/Screen.java \
-	$(SRC)/com/bdjb/api/AbstractInt.java \
 	$(SRC)/com/bdjb/api/API.java \
 	$(SRC)/com/bdjb/api/Buffer.java \
+	$(SRC)/com/bdjb/api/Text.java \
+	$(SRC)/com/bdjb/api/AbstractInt.java \
 	$(SRC)/com/bdjb/api/Int8.java \
 	$(SRC)/com/bdjb/api/Int16.java \
 	$(SRC)/com/bdjb/api/Int32.java \

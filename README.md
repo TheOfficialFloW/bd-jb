@@ -2,6 +2,6 @@
 
 The first bd-j hack.
 
-# Credits
+# Prerequisites
 
 - bd-j tools from https://github.com/zathras/java.net

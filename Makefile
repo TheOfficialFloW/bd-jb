@@ -53,10 +53,12 @@ classes:
 jar:
 	rm -rf $(BUILD)/jdk
 	cp $(SRC)/com/bdjb/bluray.ExploitXlet.perm $(BUILD)/com/bdjb/bluray.ExploitXlet.perm
+	mkdir -p $(DISC)/BDMV/JAR
 	cd $(BUILD) && jar cf ../$(DISC)/BDMV/JAR/00000.jar . && cd ..
 	java -cp "$(TOOLS)/security.jar:$(TOOLS)/bcprov-jdk15-137.jar:$(TOOLS)/tools.jar" net.java.bd.tools.security.BDSigner $(DISC)/BDMV/JAR/00000.jar
 
 bdjo_bdmv:
+	mkdir -p $(DISC)/BDMV/BDJO
 	java -jar $(TOOLS)/bdjo.jar $(BDMV)/bdjo.xml $(DISC)/BDMV/BDJO/00000.bdjo
 	java -jar $(TOOLS)/MovieObject.jar $(BDMV)/MovieObject.xml $(DISC)/BDMV/MovieObject.bdmv
 	java -jar $(TOOLS)/index.jar $(BDMV)/index.xml $(DISC)/BDMV/index.bdmv

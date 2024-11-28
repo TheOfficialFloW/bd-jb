@@ -13,13 +13,11 @@ import javax.tv.xlet.XletContext;
 import org.havi.ui.HScene;
 import org.havi.ui.HSceneFactory;
 
-public class ExploitXlet implements Xlet {
+public class LoaderXlet implements Xlet {
   private HScene scene;
   private Screen screen;
 
   public void initXlet(XletContext context) {
-    Exploit.init();
-
     screen = Screen.getInstance();
     screen.setSize(1920, 1080); // BD screen size
 
@@ -31,7 +29,7 @@ public class ExploitXlet implements Xlet {
   public void startXlet() {
     screen.setVisible(true);
     scene.setVisible(true);
-    Exploit.start();
+    Loader.startJarLoader();
   }
 
   public void pauseXlet() {

@@ -11,6 +11,7 @@ import java.awt.Color;
 import java.awt.Container;
 import java.awt.Font;
 import java.awt.Graphics;
+import java.lang.reflect.Method;
 import java.util.ArrayList;
 
 public class Screen extends Container {
@@ -22,13 +23,27 @@ public class Screen extends Container {
 
   private static final Screen instance = new Screen();
 
+  private static Method remoteScreenPrintln = null;
+
   public static Screen getInstance() {
     return instance;
   }
 
+  public static void setRemotePrintln(Method screenPrintln) {
+    remoteScreenPrintln = screenPrintln;
+  }
+
   public static void println(String msg) {
-    messages.add(msg);
-    instance.repaint();
+    if (remoteScreenPrintln != null) {
+      try {
+        remoteScreenPrintln.invoke(null, new Object[] {msg});
+      } catch (Exception e) {
+        // Ignore.
+      }
+    } else {
+      messages.add(msg);
+      instance.repaint();
+    }
   }
 
   public void paint(Graphics g) {

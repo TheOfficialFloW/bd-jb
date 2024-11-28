@@ -15,7 +15,7 @@
         <classpathExtension></classpathExtension>
         <iconFlags>0x0</iconFlags>
         <iconLocator></iconLocator>
-        <initialClassName>com.bdjb.ExploitXlet</initialClassName>
+        <initialClassName>com.bdjb.LoaderXlet</initialClassName>
         <priority>128</priority>
         <profiles>
           <majorVersion>1</majorVersion>

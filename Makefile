@@ -5,8 +5,12 @@ LIB = lib
 SRC = src
 TOOLS = tools
 
-CLASSES = \
-	$(SRC)/com/bdjb/ExploitXlet.java \
+LOADER_CLASSES = \
+	$(SRC)/com/bdjb/LoaderXlet.java \
+	$(SRC)/com/bdjb/Loader.java \
+	$(SRC)/com/bdjb/Screen.java \
+
+EXPLOIT_CLASSES = \
 	$(SRC)/com/bdjb/Exploit.java \
 	$(SRC)/com/bdjb/Screen.java \
 	$(SRC)/com/bdjb/api/API.java \
@@ -25,39 +29,42 @@ CLASSES = \
 	$(SRC)/com/bdjb/jit/JitCompilerReceiverImpl.java \
 	$(SRC)/com/bdjb/exploit/sandbox/ExploitSandboxInterface.java \
 	$(SRC)/com/bdjb/exploit/sandbox/ExploitDefaultImpl.java \
-	$(SRC)/com/bdjb/exploit/sandbox/ExploitUserPrefsImpl.java \
 	$(SRC)/com/bdjb/exploit/sandbox/ExploitServiceProxyImpl.java \
 	$(SRC)/com/bdjb/exploit/sandbox/IxcProxyImpl.java \
 	$(SRC)/com/bdjb/exploit/sandbox/ServiceInterface.java \
 	$(SRC)/com/bdjb/exploit/sandbox/ServiceImpl.java \
 	$(SRC)/com/bdjb/exploit/sandbox/ProviderAccessorImpl.java \
-	$(SRC)/com/bdjb/exploit/sandbox/PayloadClassLoader.java \
 	$(SRC)/com/bdjb/exploit/sandbox/Payload.java \
 	$(SRC)/com/bdjb/exploit/kernel/ExploitKernelInterface.java \
 
 JFLAGS = -Xlint:all -Xlint:-options -source 1.4 -target 1.4 -bootclasspath "$(LIB)/rt.jar:$(LIB)/bdjstack.jar"
 
-all: directory serialized classes jar bdjo_bdmv
+all: loader exploit
 
-directory:
+loader: build_directory loader_classes loader_jar loader_bdjo_bdmv
+
+exploit: build_directory exploit_classes exploit_jar
+
+build_directory:
 	mkdir -p $(BUILD)
 
-serialized:
-	javac -d $(BUILD) -sourcepath $(SRC) $(SRC)/com/bdjb/exploit/sandbox/PayloadClassLoaderSerializer.java
-	java -cp $(BUILD) com/bdjb/exploit/sandbox/PayloadClassLoaderSerializer $(BUILD)/com/bdjb/exploit/sandbox/PayloadClassLoader.ser
-	rm $(BUILD)/com/bdjb/exploit/sandbox/PayloadClassLoaderSerializer.class
+loader_classes:
+	javac -d $(BUILD) -sourcepath $(SRC) $(JFLAGS) $(LOADER_CLASSES)
 
-classes:
-	javac -d $(BUILD) -sourcepath $(SRC) $(JFLAGS) $(CLASSES)
+exploit_classes:
+	javac -d $(BUILD) -sourcepath $(SRC) $(JFLAGS) $(EXPLOIT_CLASSES)
 
-jar:
-	rm -rf $(BUILD)/jdk
+loader_jar:
 	mkdir -p  $(DISC)/BDMV/JAR
-	cp $(SRC)/com/bdjb/bluray.ExploitXlet.perm $(BUILD)/com/bdjb/bluray.ExploitXlet.perm
+	cp $(SRC)/com/bdjb/bluray.LoaderXlet.perm $(BUILD)/com/bdjb/bluray.LoaderXlet.perm
 	cd $(BUILD) && jar cf ../$(DISC)/BDMV/JAR/00000.jar . && cd ..
 	java -cp "$(TOOLS)/security.jar:$(TOOLS)/bcprov-jdk15-137.jar:$(TOOLS)/tools.jar" net.java.bd.tools.security.BDSigner $(DISC)/BDMV/JAR/00000.jar
 
-bdjo_bdmv:
+exploit_jar:
+	rm -rf $(BUILD)/jdk
+	cd $(BUILD) && jar cf 00000.jar . && cd ..
+
+loader_bdjo_bdmv:
 	mkdir -p  $(DISC)/BDMV/BDJO
 	java -jar $(TOOLS)/bdjo.jar $(BDMV)/bdjo.xml $(DISC)/BDMV/BDJO/00000.bdjo
 	java -jar $(TOOLS)/MovieObject.jar $(BDMV)/MovieObject.xml $(DISC)/BDMV/MovieObject.bdmv

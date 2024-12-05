@@ -14,6 +14,7 @@ EXPLOIT_CLASSES = \
 	$(SRC)/com/bdjb/Exploit.java \
 	$(SRC)/com/bdjb/Screen.java \
 	$(SRC)/com/bdjb/api/API.java \
+	$(SRC)/com/bdjb/api/KernelAPI.java \
 	$(SRC)/com/bdjb/api/Buffer.java \
 	$(SRC)/com/bdjb/api/Text.java \
 	$(SRC)/com/bdjb/api/AbstractInt.java \

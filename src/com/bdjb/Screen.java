@@ -12,18 +12,21 @@ import java.awt.Container;
 import java.awt.Font;
 import java.awt.Graphics;
 import java.lang.reflect.Method;
-import java.util.ArrayList;
 
 public class Screen extends Container {
   private static final long serialVersionUID = 0x4141414141414141L;
 
-  private static final Font FONT = new Font(null, Font.PLAIN, 40);
+  private static final int MAX_LINES = 32;
 
-  private static final ArrayList messages = new ArrayList();
+  private static final Font FONT = new Font(null, Font.PLAIN, 32);
+
+  private static final String[] lines = new String[MAX_LINES];
 
   private static final Screen instance = new Screen();
 
   private static Method remoteScreenPrintln = null;
+
+  private static int currentLine = 0;
 
   public static Screen getInstance() {
     return instance;
@@ -33,7 +36,7 @@ public class Screen extends Container {
     remoteScreenPrintln = screenPrintln;
   }
 
-  public static void println(String msg) {
+  public static synchronized void println(String msg) {
     if (remoteScreenPrintln != null) {
       try {
         remoteScreenPrintln.invoke(null, new Object[] {msg});
@@ -41,7 +44,8 @@ public class Screen extends Container {
         // Ignore.
       }
     } else {
-      messages.add(msg);
+      lines[currentLine] = msg;
+      currentLine = (currentLine + 1) % MAX_LINES;
       instance.repaint();
     }
   }
@@ -49,14 +53,13 @@ public class Screen extends Container {
   public void paint(Graphics g) {
     g.setFont(FONT);
     g.setColor(Color.WHITE);
+    g.clearRect(0, 0, getWidth(), getHeight());
 
-    int x = 80;
-    int y = 80;
+    int x = 64;
+    int y = 64;
     int height = g.getFontMetrics().getHeight();
-    for (int i = 0; i < messages.size(); i++) {
-      String msg = (String) messages.get(i);
-      g.drawString(msg, x, y);
-      y += height;
+    for (int i = 0; i < lines.length; i++) {
+      g.drawString(lines[i], x, y + i * height);
     }
   }
 }

@@ -23,6 +23,8 @@ class Loader implements Runnable {
   private static final String MAIN_METHOD_NAME = "main";
   private static final String PRINTLN_METHOD_NAME = "println";
 
+  private static final int JAR_PORT = 9025;
+
   static void startJarLoader() {
     new Thread(new Loader()).start();
   }
@@ -31,10 +33,10 @@ class Loader implements Runnable {
     Screen.println("[+] bd-jb by theflow");
 
     while (true) {
-      Screen.println("[*] Listening for remote JAR on port 9025...");
+      Screen.println("[*] Listening for JAR on port " + JAR_PORT + "...");
 
       try {
-        ServerSocket serverSocket = new ServerSocket(9025);
+        ServerSocket serverSocket = new ServerSocket(JAR_PORT);
         Socket socket = serverSocket.accept();
         InputStream inputStream = socket.getInputStream();
         OutputStream outputStream = new FileOutputStream(MNT_ADA_JAR_FILE);
@@ -49,7 +51,7 @@ class Loader implements Runnable {
 
         outputStream.close();
         inputStream.close();
-
+        socket.close();
         serverSocket.close();
 
         Screen.println("[+] Received " + total + " bytes");
@@ -59,10 +61,10 @@ class Loader implements Runnable {
         DVBClassLoader dvbClassLoader =
             DVBClassLoader.newInstance(new URL[] {new URL("file://" + MNT_ADA_JAR_FILE)});
         Class exploitClass = dvbClassLoader.loadClass(EXPLOIT_CLASS_NAME);
-        Method main = exploitClass.getMethod(MAIN_METHOD_NAME, new Class[] {Method.class});
+        Method exploitMain = exploitClass.getMethod(MAIN_METHOD_NAME, new Class[] {Method.class});
         Method screenPrintln =
             Screen.class.getMethod(PRINTLN_METHOD_NAME, new Class[] {String.class});
-        main.invoke(null, new Object[] {screenPrintln});
+        exploitMain.invoke(null, new Object[] {screenPrintln});
 
         Screen.println("[+] JAR exited");
       } catch (Exception e) {

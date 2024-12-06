@@ -27,7 +27,7 @@ public class Buffer {
     this.size = size;
   }
 
-  public void finalize() {
+  protected void finalize() {
     api.free(address);
   }
 

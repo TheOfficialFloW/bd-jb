@@ -29,7 +29,7 @@ public class LoaderXlet implements Xlet {
   public void startXlet() {
     screen.setVisible(true);
     scene.setVisible(true);
-    Loader.startJarLoader();
+    Loader.startLoader();
   }
 
   public void pauseXlet() {

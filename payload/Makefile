@@ -3,8 +3,8 @@ OBJS = start.o payload.o
 
 CC = gcc
 OBJCOPY = objcopy
-CFLAGS = -isystem freebsd-headers/include -Os -fno-stack-protector
-LDFLAGS = -T linker.x -nostdlib -nostartfiles
+CFLAGS = -DSMP -isystem freebsd-headers/include -Wl,--build-id=none -Os -fno-stack-protector -fcf-protection=none -fpic -fpie
+LDFLAGS = -T linker.ld -nostartfiles -nostdlib
 
 all: $(TARGET).bin
 

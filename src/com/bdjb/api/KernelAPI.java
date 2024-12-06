@@ -34,6 +34,9 @@ public class KernelAPI {
     }
   }
 
+  private final Buffer victimPipebuf = new Buffer(PIPEBUF_SIZE);
+  private final Buffer tmp = new Buffer(PAGE_SIZE);
+
   private long pipe;
   private long read;
   private long write;
@@ -49,9 +52,6 @@ public class KernelAPI {
   private int masterWpipeFd;
   private int victimRpipeFd;
   private int victimWpipeFd;
-
-  private Buffer victimPipebuf = new Buffer(PIPEBUF_SIZE);
-  private Buffer tmp = new Buffer(PAGE_SIZE);
 
   private KernelAPI() {
     this.init();

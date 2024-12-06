@@ -8,7 +8,7 @@
 package com.bdjb.api;
 
 public class Text extends Buffer {
-  private String text;
+  private final String text;
 
   public Text(String text) {
     super(text.length() + 1);

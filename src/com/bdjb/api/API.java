@@ -45,9 +45,9 @@ public final class API {
 
   private static final int ARRAY_BASE_OFFSET = 0x18;
 
-  private static API instance;
+  private static final ThreadLocal callContexts = new ThreadLocal();
 
-  private static ThreadLocal callContexts = new ThreadLocal();
+  private static API instance;
 
   private UnsafeInterface unsafe;
 
@@ -133,7 +133,7 @@ public final class API {
     __Ux86_64_setcontext = dlsym(LIBKERNEL_MODULE_HANDLE, UX86_64_SETCONTEXT_SYMBOL);
     if (__Ux86_64_setcontext == 0) {
       // In earlier versions, there's a bug where only the main executable's handle is used.
-      executableHandle = JVM_NativePath & ~(4 - 1);
+      executableHandle = JVM_NativePath & -4;
       while (strcmp(executableHandle, UNSUPPORTED_DLOPEN_OPERATION_STRING) != 0) {
         executableHandle += 4;
       }
@@ -183,8 +183,8 @@ public final class API {
         long constants = read64(constMethod + 0x08);
         short nameIndex = read16(constMethod + 0x2A);
         short signatureIndex = read16(constMethod + 0x2C);
-        long nameSymbol = read64(constants + 0x40 + nameIndex * 8) & ~(2 - 1);
-        long signatureSymbol = read64(constants + 0x40 + signatureIndex * 8) & ~(2 - 1);
+        long nameSymbol = read64(constants + 0x40 + nameIndex * 8) & -2;
+        long signatureSymbol = read64(constants + 0x40 + signatureIndex * 8) & -2;
         short nameLength = read16(nameSymbol + 0x00);
         short signatureLength = read16(signatureSymbol + 0x00);
 
@@ -207,8 +207,8 @@ public final class API {
         long constants = read64(method + 0x18);
         short nameIndex = read16(constMethod + 0x42);
         short signatureIndex = read16(constMethod + 0x44);
-        long nameSymbol = read64(constants + 0x40 + nameIndex * 8) & ~(2 - 1);
-        long signatureSymbol = read64(constants + 0x40 + signatureIndex * 8) & ~(2 - 1);
+        long nameSymbol = read64(constants + 0x40 + nameIndex * 8) & -2;
+        long signatureSymbol = read64(constants + 0x40 + signatureIndex * 8) & -2;
         short nameLength = read16(nameSymbol + 0x08);
         short signatureLength = read16(signatureSymbol + 0x08);
 
@@ -601,21 +601,20 @@ public final class API {
   }
 
   class CallContext {
-    long[] fakeClassOop;
-    long[] fakeClass;
-    long[] fakeKlass;
-    long[] fakeKlassVtable;
+    final long[] fakeClassOop;
+    final long[] fakeClass;
+    final long[] fakeKlass;
+    final long[] fakeKlassVtable;
 
-    long fakeClassOopAddr;
-    long fakeClassAddr;
-    long fakeKlassAddr;
-    long fakeKlassVtableAddr;
+    final long fakeClassOopAddr;
+    final long fakeClassAddr;
+    final long fakeKlassAddr;
+    final long fakeKlassVtableAddr;
 
-    private long[][] callContextArray = new long[4][0];
-    private long callcontextBuffer;
+    private final long callContextBuffer;
 
     CallContext() {
-      callcontextBuffer =
+      callContextBuffer =
           malloc(
               ARRAY_BASE_OFFSET
                   + Int64.SIZE
@@ -625,12 +624,12 @@ public final class API {
                   + 0x200
                   + ARRAY_BASE_OFFSET
                   + 0x400);
-      if (callcontextBuffer == 0) {
+      if (callContextBuffer == 0) {
         throw new OutOfMemoryError("malloc failed");
       }
 
       // Get array addresses.
-      fakeClassOopAddr = callcontextBuffer + ARRAY_BASE_OFFSET;
+      fakeClassOopAddr = callContextBuffer + ARRAY_BASE_OFFSET;
       fakeClassAddr = fakeClassOopAddr + Int64.SIZE + ARRAY_BASE_OFFSET;
       fakeKlassAddr = fakeClassAddr + 0x100 + ARRAY_BASE_OFFSET;
       fakeKlassVtableAddr = fakeKlassAddr + 0x200 + ARRAY_BASE_OFFSET;
@@ -655,6 +654,7 @@ public final class API {
       write64(fakeKlassAddr - 8, 0xFFFFFFFF);
       write64(fakeKlassVtableAddr - 8, 0xFFFFFFFF);
 
+      long[][] callContextArray = new long[4][0];
       long callContextArrayAddr = addrof(callContextArray) + ARRAY_BASE_OFFSET;
 
       // Put array addresses into callContextArray.
@@ -688,7 +688,7 @@ public final class API {
     }
 
     protected void finalize() {
-      free(callcontextBuffer);
+      free(callContextBuffer);
     }
   }
 }

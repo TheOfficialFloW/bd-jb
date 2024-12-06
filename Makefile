@@ -13,20 +13,22 @@ LOADER_CLASSES = \
 EXPLOIT_CLASSES = \
 	$(SRC)/com/bdjb/Exploit.java \
 	$(SRC)/com/bdjb/Screen.java \
+	$(SRC)/com/bdjb/Payload.java \
 	$(SRC)/com/bdjb/api/API.java \
 	$(SRC)/com/bdjb/api/KernelAPI.java \
 	$(SRC)/com/bdjb/api/Buffer.java \
 	$(SRC)/com/bdjb/api/Text.java \
 	$(SRC)/com/bdjb/api/Int8.java \
+	$(SRC)/com/bdjb/api/Int8Array.java \
 	$(SRC)/com/bdjb/api/Int16.java \
+	$(SRC)/com/bdjb/api/Int16Array.java \
 	$(SRC)/com/bdjb/api/Int32.java \
+	$(SRC)/com/bdjb/api/Int32Array.java \
 	$(SRC)/com/bdjb/api/Int64.java \
+	$(SRC)/com/bdjb/api/Int64Array.java \
 	$(SRC)/com/bdjb/api/UnsafeInterface.java \
 	$(SRC)/com/bdjb/api/UnsafeJdkImpl.java \
 	$(SRC)/com/bdjb/api/UnsafeSunImpl.java \
-	$(SRC)/com/bdjb/jit/AbstractJit.java \
-	$(SRC)/com/bdjb/jit/JitDefaultImpl.java \
-	$(SRC)/com/bdjb/jit/JitCompilerReceiverImpl.java \
 	$(SRC)/com/bdjb/exploit/sandbox/ExploitSandboxInterface.java \
 	$(SRC)/com/bdjb/exploit/sandbox/ExploitDefaultImpl.java \
 	$(SRC)/com/bdjb/exploit/sandbox/ExploitServiceProxyImpl.java \

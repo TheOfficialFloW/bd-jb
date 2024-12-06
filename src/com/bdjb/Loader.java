@@ -25,7 +25,7 @@ class Loader implements Runnable {
 
   private static final int JAR_PORT = 9025;
 
-  static void startJarLoader() {
+  static void startLoader() {
     new Thread(new Loader()).start();
   }
 
@@ -33,9 +33,9 @@ class Loader implements Runnable {
     Screen.println("[+] bd-jb by theflow");
 
     while (true) {
-      Screen.println("[*] Listening for JAR on port " + JAR_PORT + "...");
-
       try {
+        Screen.println("[*] Listening for JAR on port " + JAR_PORT + "...");
+
         ServerSocket serverSocket = new ServerSocket(JAR_PORT);
         Socket socket = serverSocket.accept();
         InputStream inputStream = socket.getInputStream();

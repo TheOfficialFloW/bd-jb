@@ -440,6 +440,14 @@ public final class API {
     return unsafe.allocateMemory(size);
   }
 
+  public long calloc(long number, long size) {
+    long p = malloc(number * size);
+    if (p != 0) {
+      memset(p, 0, number * size);
+    }
+    return p;
+  }
+
   public long realloc(long ptr, long size) {
     return unsafe.reallocateMemory(ptr, size);
   }

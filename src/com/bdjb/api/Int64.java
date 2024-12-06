@@ -7,23 +7,16 @@
 
 package com.bdjb.api;
 
-public final class Int64 extends AbstractInt {
+public final class Int64 extends Buffer {
   public static final int SIZE = 8;
 
   public Int64() {
     super(SIZE);
   }
 
-  public Int64(long address) {
-    super(address, SIZE);
-  }
-
-  public Int64(int[] dimensions) {
-    super(dimensions, SIZE);
-  }
-
-  public Int64(long address, int[] dimensions) {
-    super(address, dimensions, SIZE);
+  public Int64(long value) {
+    this();
+    set(value);
   }
 
   public long get() {
@@ -32,13 +25,5 @@ public final class Int64 extends AbstractInt {
 
   public void set(long value) {
     putLong(0x00, value);
-  }
-
-  public long get(int[] indices) {
-    return getLong(offset(indices));
-  }
-
-  public void set(int[] indices, long value) {
-    putLong(offset(indices), value);
   }
 }

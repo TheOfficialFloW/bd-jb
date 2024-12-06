@@ -40,6 +40,8 @@ public class KernelAPI {
   private long fcntl;
   private long close;
 
+  private long kaslrOffset;
+
   private int masterRpipeFd;
   private int masterWpipeFd;
   private int victimRpipeFd;
@@ -77,16 +79,16 @@ public class KernelAPI {
   }
 
   private void initPipes() {
-    Int32 masterPipeFd = new Int32(new int[] {2});
-    Int32 victimPipeFd = new Int32(new int[] {2});
+    Int32Array masterPipeFd = new Int32Array(2);
+    Int32Array victimPipeFd = new Int32Array(2);
 
     pipe(masterPipeFd);
     pipe(victimPipeFd);
 
-    masterRpipeFd = masterPipeFd.get(new int[] {0});
-    masterWpipeFd = masterPipeFd.get(new int[] {1});
-    victimRpipeFd = victimPipeFd.get(new int[] {0});
-    victimWpipeFd = victimPipeFd.get(new int[] {1});
+    masterRpipeFd = masterPipeFd.get(0);
+    masterWpipeFd = masterPipeFd.get(1);
+    victimRpipeFd = victimPipeFd.get(0);
+    victimWpipeFd = victimPipeFd.get(1);
 
     fcntl(masterRpipeFd, F_SETFL, O_NONBLOCK);
     fcntl(masterWpipeFd, F_SETFL, O_NONBLOCK);
@@ -94,7 +96,7 @@ public class KernelAPI {
     fcntl(victimWpipeFd, F_SETFL, O_NONBLOCK);
   }
 
-  private int pipe(Int32 fildes) {
+  private int pipe(Int32Array fildes) {
     return (int) api.call(pipe, fildes != null ? fildes.address() : 0);
   }
 
@@ -181,7 +183,23 @@ public class KernelAPI {
     return masterRpipeFd;
   }
 
+  public int getMasterWpipeFd() {
+    return masterWpipeFd;
+  }
+
   public int getVictimRpipeFd() {
     return victimRpipeFd;
+  }
+
+  public int getVictimWpipeFd() {
+    return victimWpipeFd;
+  }
+
+  public long getKaslrOffset() {
+    return kaslrOffset;
+  }
+
+  public void setKaslrOffset(long offset) {
+    kaslrOffset = offset;
   }
 }

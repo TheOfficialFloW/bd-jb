@@ -42,6 +42,9 @@ public class KernelAPI {
 
   private long kaslrOffset;
 
+  private Int32Array masterPipeFd = new Int32Array(2);
+  private Int32Array victimPipeFd = new Int32Array(2);
+
   private int masterRpipeFd;
   private int masterWpipeFd;
   private int victimRpipeFd;
@@ -79,9 +82,6 @@ public class KernelAPI {
   }
 
   private void initPipes() {
-    Int32Array masterPipeFd = new Int32Array(2);
-    Int32Array victimPipeFd = new Int32Array(2);
-
     pipe(masterPipeFd);
     pipe(victimPipeFd);
 
@@ -179,20 +179,12 @@ public class KernelAPI {
     kwrite(addr, tmp, Int64.SIZE);
   }
 
-  public int getMasterRpipeFd() {
-    return masterRpipeFd;
+  public Int32Array getMasterPipeFd() {
+    return masterPipeFd;
   }
 
-  public int getMasterWpipeFd() {
-    return masterWpipeFd;
-  }
-
-  public int getVictimRpipeFd() {
-    return victimRpipeFd;
-  }
-
-  public int getVictimWpipeFd() {
-    return victimWpipeFd;
+  public Int32Array getVictimPipeFd() {
+    return victimPipeFd;
   }
 
   public long getKaslrOffset() {

@@ -9,7 +9,7 @@ package com.bdjb.api;
 
 public final class Int64Array extends Buffer {
   public Int64Array(int length) {
-    super(Int64.SIZE);
+    super(length * Int64.SIZE);
   }
 
   public long get(int index) {

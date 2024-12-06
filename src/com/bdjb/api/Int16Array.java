@@ -9,7 +9,7 @@ package com.bdjb.api;
 
 public final class Int16Array extends Buffer {
   public Int16Array(int length) {
-    super(Int16.SIZE);
+    super(length * Int16.SIZE);
   }
 
   public short get(int index) {

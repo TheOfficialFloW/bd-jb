@@ -9,7 +9,7 @@ package com.bdjb.api;
 
 public final class Int8Array extends Buffer {
   public Int8Array(int length) {
-    super(Int8.SIZE);
+    super(length * Int8.SIZE);
   }
 
   public byte get(int index) {

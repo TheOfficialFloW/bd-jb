@@ -1,9 +1,9 @@
 TARGET = payload
-OBJS = start.o payload.o
+OBJS = start.o stubs.o payload.o resolve.o kernel.o
 
 CC = gcc
 OBJCOPY = objcopy
-CFLAGS = -DSMP -isystem freebsd-headers/include -Wl,--build-id=none -Os -fno-stack-protector -fcf-protection=none -fpic -fpie
+CFLAGS = -isystem sdk/include -Wl,--build-id=none -Os -Wno-builtin-declaration-mismatch -fno-stack-protector -fcf-protection=none -fpic -fpie
 LDFLAGS = -T linker.ld -nostartfiles -nostdlib
 
 all: $(TARGET).bin
